@@ -29,6 +29,6 @@ Many times faster, Mouse support, Windowing, Off screen buffered writing, etc...
 would get really flakey on computers that didn't have mice. So instead of fixing those 
 programs, it turned out to be easier just gut the QCRT mouse support.
 
-**_STRASM.PAS_** Super fast, inline assembler for manipulating pascal strings.
+**_STRASM.PAS_** Super fast, pascal inline assembler code for manipulating pascal strings.
 
 **_STRSIZE.PAS_** Just a unit wrapper for STRSIZE.INC.
