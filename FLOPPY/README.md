@@ -12,4 +12,6 @@ Copyright 1990-2015 Jerome Shidel.
 
 **_READBOOT.PAS_** Utility to read and save a floppy boot sector.
 
+**_TESTDOS.PAS_** Test program for **_DOSEXT.PAS_** unit.
+
 **_WRITBOOT.PAS_** Writes a specified file to a floppy boot sector.
