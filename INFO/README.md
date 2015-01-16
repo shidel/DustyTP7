@@ -4,6 +4,6 @@ http://mozilla.org/MPL/2.0/.
 
 Copyright 1990-2015 Jerome Shidel.
 
-# The System Information utility.
+### The System Information utility.
 
 Returns general and specific information about the system it is running under.
