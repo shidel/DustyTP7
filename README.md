@@ -12,8 +12,8 @@ the general public as open source under the **_Mozilla Public license_**. These 
 were written over 20 years ago and for the most part, have not been updated since. I do 
 intend on making some minor modifications to several of the programs that have issues 
 running on modern hardware. Mainly, this will be to swap out references to the _Borland
-CRT_ unit for My _QCRT_ unit. The _Borland_ version crashes on computers with to high a clock
-speed. 
+CRT_ unit for My _QCRT_ unit. The _Borland_ version crashes on modern computers with their 
+very fast clock speeds. 
 
 These files may serve no real purpose in todays modern computing environments. However,
 you may find them useful as examples or even starting points for other projects. They 
