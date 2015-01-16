@@ -26,8 +26,7 @@ older version of the source to be able to compile, it will be included. I will a
 try and provide a brief description of what each of them does.
 
 Anyway, this is a work in progress. Most of my old source files are jumbled about in nested directories and
-didn't include version numbers. Multiple copies of the same code. Backup copies. Missing units in projects. Over 20 years, migrating from one computer to another, I'm ammazed I still have nearly all of it. But, its a rats nest of 
-source code. So, as I find time to weed through it, I plan to keep adding stuff. 
+didn't include version numbers. Multiple copies of the same code. Backup copies. Missing units in projects. Over 20 years worth of migrating from one computer to another, I'm ammazed I still have nearly all of it. But, its a rats nest of source code. So, as I find time to weed through it, I plan to keep adding stuff. 
 
 Some of the stuff to come includes: Text mode smooth scrolling directory lister. Pre-Windows application launcher, Couple Games... and more Utilities.
 
