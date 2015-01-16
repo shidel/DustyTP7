@@ -11,7 +11,7 @@ Recently, I have decided to release many of my ancient Turbo Pascal 7.0 source f
 the general public as open source under the Mozilla Public license. These source files
 were written over 20 years ago and for the most part, have not been updated since. I do 
 intend on making some minor modifications to several of the programs that have issues 
-running on modern hardware. Many this will be to swap out references to the Borland
+running on modern hardware. Mainly, this will be to swap out references to the Borland
 CRT unit for My QCRT unit. The Borland version crashes on computers with to high a clock
 speed. 
 
