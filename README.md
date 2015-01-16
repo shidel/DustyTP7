@@ -21,8 +21,14 @@ are being provided **AS-IS** and I make no claim to there stability or usefulnes
 purpose.
 
 Generally, only the final version of each program, unit, include file, etc. will be 
-provided. The main exception to that is when a specific program requires a specific
-older version of the source to be able to compile. I will also try and provide a brief 
-description of what each of them does.
+provided. The main exception is, when a specific program requires a specific
+older version of the source to be able to compile, it will be included. I will also
+try and provide a brief description of what each of them does.
+
+Anyway, this is a work in progress. Most of my old source files are jumbled about in nested directories and
+didn't include version numbers. Multiple copies of the same code. Backup copies. Missing units in projects. Over 20 years, migrating from one computer to another, I'm ammazed I still have nearly all of it. But, its a rats nest of 
+source code. So, as I find time to weed through it, I plan to keep adding stuff. 
+
+Some of the stuff to come includes: Text mode smooth scrolling directory lister. Pre-Windows application launcher, Couple Games... and more Utilities.
 
 Compiled versions of each program are located under the bin directory.
