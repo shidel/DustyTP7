@@ -12,6 +12,8 @@ Copyright 1990-2015 Jerome Shidel.
 
 **_COMASM.COM_** Basic Pascal EXE source to COM image demo.
 
+**_D.EXE_** Advanced directory listing program.
+
 **_DRIVE.COM_** Returns type information about the current active drive.
 
 **_ENV.COM_** Returns current environment variable table.
