@@ -15,3 +15,7 @@ Copyright 1990-2015 Jerome Shidel.
 **_TESTDOS.PAS_** Test program for **_DOSEXT.PAS_** unit.
 
 **_WRITBOOT.PAS_** Writes a specified file to a floppy boot sector.
+
+There were a couple other floppy tools I made called COPYDISK, SAVEDISK and MAKEDISK. They still work under
+Vista 32-bit (mostly). However, I seemed to have lost there source code. If I ever find them, I be sure to add
+them as well.
