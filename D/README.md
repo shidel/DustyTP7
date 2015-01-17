@@ -9,4 +9,5 @@ Copyright 1990-2015 Jerome Shidel.
 
 ### D the Advanced Directory Lister
 
-**_D710.PAS_** Final version 7.10 of the directory listing program.
+**_D710.PAS_** Final version 7.10 of the directory listing program. Please note that this version 
+will only support color when *ANSI* terminal support is available. Such as with *ANSI.SYS* in DOS.
