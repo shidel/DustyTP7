@@ -12,7 +12,9 @@ Copyright 1990-2015 Jerome Shidel.
 
 **_COMASM.COM_** Basic Pascal EXE source to COM image demo.
 
-**_D.EXE_** Advanced directory listing program.
+**_D.EXE_** Advanced directory listing program v7.10.
+
+**_DS.EXE_** Smooth scrolling directory listing program, based on earlier version of D.EXE.
 
 **_DRIVE.COM_** Returns type information about the current active drive.
 
