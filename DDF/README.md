@@ -10,7 +10,8 @@ Copyright 1990-2015 Jerome Shidel.
 ### Directory and file description
 
 These programs compile and run. However, it appears broken. This may be do to incorrect
-versions of units. However, at present I don not intend on digging into the problem. 
+versions of units. However, at present I do not intend on digging into the problem or trying 
+to fix it.
 
 **_DDF.PAS_** Directory description editor for **_D.EXE_**. 
 
