@@ -18,6 +18,8 @@ Copyright 1990-2015 Jerome Shidel.
 
 **_DRIVE.COM_** Returns type information about the current active drive.
 
+**_DRIVE.EXE_** Returns some general information about all drives.
+
 **_ENV.COM_** Returns current environment variable table.
 
 **_FASTKEY.COM_** Sets keyboard delay to minimum and and repeat rate to maximum.
