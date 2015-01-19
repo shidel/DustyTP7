@@ -1,0 +1,223 @@
+             ***************************************************
+             |  Sound Blaster Pro Mixer Chip Interface Driver  |
+             |                                                 |
+             |                  Version #1.10                  |
+             |                                                 |
+             |                By J. E. Shidel Jr.              |
+             ***************************************************
+
+For use only with Creative Lab's Sound Blaster Pro.
+------------------------------------------------------------------------------
+   To load the driver correctly, make sure the driver is loaded on a segment
+boundary ( offset 0, or ????:0000 ), or calls to the driver can produce
+unpredicdable results.
+
+   Bytes 3 - 5 of the SBPMixer.drv file contain the text 'JES' use these
+letters to test if the file is a actual SBPMixer device driver file.  These
+3 characters will not change in future versions of SBPMixer.
+
+  Calling SBPMixer is fairly simple, SBPMixer must be called by using a
+FAR CALL to offset 0.  For example, the driver is loaded at address 2000:0000,
+call that address.  All registers and Flags are preserved except AX and CX.
+AX is always 0 upon exit from the driver except when an invalid funtion call
+is made, then AX will be 045h. Also on exit from the driver, CX will contain
+information or be undefined.
+
+  NOTE:  Although SBPMixer uses very little stack space, it uses the caller's
+         Stack.
+
+------------------------------------------------------------------------------
+Driver Functions
+------------------------------------------------------------------------------
+Function 0    Get driver version
+
+   INPUT: BX = 0
+  OUTPUT: CH = Major version
+          CL = Minor version
+------------------------------------------------------------------------------
+Function 1    Get current base port setting
+
+   INPUT: BX = 1
+  OUTPUT: CX = Base port  (default value is 220h)
+------------------------------------------------------------------------------
+Function 2    Set current base port setting
+
+   INPUT: BX = 2
+          CX = Base port
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 3    Reset Mixer Chip
+
+   INPUT: BX = 3
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 4    Set Master Volume
+
+   INPUT: BX = 4
+          CH = Left  Volume ( even numbers are rounded up )
+          CL = Right Volume ( even numbers are rounded up )
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 5    Set Voice Volume
+
+   INPUT: BX = 5
+          CH & CL are the same as in Function 4.
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 6    Set FM Volume
+
+   INPUT: BX = 6
+          CH & CL are the same as in Function 4.
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 7    Set CD Volume
+
+   INPUT: BX = 7
+          CH & CL are the same as in Function 4, but CH should equal CL.
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 8    Set Microphone Volume
+
+   INPUT: BX = 8
+          CL = Volume
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 9    Select FM Channel
+
+   INPUT: BX = 9
+          CX = Channel
+               0 = No Steering
+               1 = Steer to Left
+               2 = Steer to Right
+               3 = Mute
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 0Ah  Select Stereo/Mono
+
+   INPUT: BX = 0Ah
+          CX = Stereo/Mono
+               0 = Mono
+               1 = Stereo
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 0Bh  Set Line Volume
+
+   INPUT: BX = 0Bh
+          CH & CL are the same as in Function 4.
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 0Ch  Select ADC Channel
+
+   INPUT: BX = 0Ch
+          CX = ADC Channel
+               0 = Microphone
+               1 = CD
+               2 = (reserved)
+               3 = Line
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 0Dh  Select ADC Filter
+
+   INPUT: BX = 0Dh
+          CX = ADC Filter
+               0 = Low
+               1 = High
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 0Eh  Select ANFI Filter
+
+   INPUT: BX = 0Eh
+          CX = Select ANFI Filter
+               0 = Off
+               1 = On
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 0Fh  Select DNFI Filter
+
+   INPUT: BX = 0Fh
+          CX = Select DNFI Filter
+               0 = Off
+               1 = On
+  OUTPUT: none
+------------------------------------------------------------------------------
+Function 10h  Get Master Volume
+
+   INPUT: BX = 10h
+  OUTPUT: CH = Left  Volume
+          CL = Right Volume
+------------------------------------------------------------------------------
+Function 11h  Get Voice Volume
+
+   INPUT: BX = 11h
+  OUTPUT: CH = Left  Volume
+          CL = Right Volume
+------------------------------------------------------------------------------
+Function 12h  Get FM Volume
+
+   INPUT: BX = 12h
+  OUTPUT: CH = Left  Volume
+          CL = Right Volume
+------------------------------------------------------------------------------
+Function 13h  Get CD Volume
+
+   INPUT: BX = 13h
+  OUTPUT: CH = Left  Volume
+          CL = Right Volume
+------------------------------------------------------------------------------
+Function 14h  Get MIC Volume
+
+   INPUT: BX = 14h
+  OUTPUT: CL = Volume
+------------------------------------------------------------------------------
+Function 15h  Get FM Channel
+
+   INPUT: BX = 15h
+  OUTPUT: CX = FM Channel
+               0 = No Steering
+               1 = Steer to Left
+               2 = Steer to Right
+               3 = Mute
+------------------------------------------------------------------------------
+Function 16h  Get Stereo/Mono
+
+   INPUT: BX = 16h
+  OUTPUT: CX = Stereo/Mono
+               0 = Mono
+               1 = Stereo
+------------------------------------------------------------------------------
+Function 17h  Get Line Volume
+
+   INPUT: BX = 17h
+  OUTPUT: CH = Left  Volume
+          CL = Right Volume
+------------------------------------------------------------------------------
+Function 18h  Get ADC Channel
+
+   INPUT: BX = 18h
+  OUTPUT: CX = ADC Channel
+               0 = Microphone
+               1 = CD
+               2 = (reserved)
+               3 = Line
+------------------------------------------------------------------------------
+Function 19h  Get ADC Filter
+
+   INPUT: BX = 19h
+  OUTPUT: CX = ADC Filter
+               0 = Low
+               1 = High
+------------------------------------------------------------------------------
+Function 1Ah  Get ANFI Filter
+
+   INPUT: BX = 1Ah
+  OUTPUT: CX = Select ANFI Filter
+               0 = Off
+               1 = On
+------------------------------------------------------------------------------
+Function 1Bh  Get DNFI Filter
+
+   INPUT: BX = 1Bh
+  OUTPUT: CX = Select DNFI Filter
+               0 = Off
+               1 = On
+------------------------------------------------------------------------------
