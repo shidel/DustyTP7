@@ -1,0 +1,12 @@
+{$G-}       (* 8086/8087 compatible *)
+{$A+,B-}    (* Byte alignment, short-circut boolean *)
+{$E-,N-}    (* Emulation, coprocessor *)
+{$F-,O-}    (* Farcalls, and no overlays *)
+{$R-,Q-,S-} (* No range, overflow or stack checking *)
+{$I-}       (* No I/O checking *)
+{$D-,L-,Y-} (* No Debug, label or symbol information *)
+{$P-,V+}    (* OpenString parameters, with strict type-checking *)
+{$T-}       (* No type-checked pointers *)
+{$X+}       (* Enable extended syntax *)
+
+{ D+,L+,Y+,R+,S+}
