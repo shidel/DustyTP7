@@ -8,7 +8,7 @@ Copyright 1990-2015 Jerome Shidel.
 
 **_BOOTDRIV.COM_** Returns the drive letter system used for booting.
 
-**_BOOTME.BIN_** Experimental replacement boot sector for floppy disks. 
+_BOOTME.BIN_ Experimental replacement boot sector for floppy disks. 
 
 **_COMASM.COM_** Basic Pascal EXE to COM image demo.
 
@@ -19,6 +19,8 @@ Copyright 1990-2015 Jerome Shidel.
 **_DDFLINK.EXE_** Automatic Description File Editor Message Linker.
 
 **_DS.EXE_** Smooth scrolling directory listing program, based on earlier version of D.EXE.
+
+_DISCRIPT.DDF_ Directory description Data File. (So, I couldn't spell.) 
 
 **_DTYPE.COM_** (Actually, DRIVE.COM but renamed to reduce conflict with DRIVE.EXE)
 Returns type information about the current active drive.
@@ -47,7 +49,7 @@ will be lost.
 
 **_READBOOT.EXE_** Utility to read and save a floppy boot sector.
 
-**_SBPMIXER.DRV_** Binary device driver for controlling a SoundBlaster Pro Mixer chipset.
+_SBPMIXER.DRV_ Binary device driver for controlling a SoundBlaster Pro Mixer chipset.
 
 **_TESTANSI.EXE_** Test program for the **_ANSISYS.PAS_** unit. 
 
