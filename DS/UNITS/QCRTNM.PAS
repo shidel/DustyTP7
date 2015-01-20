@@ -8,7 +8,7 @@ http://mozilla.org/MPL/2.0/.
 
 {$I TURBO.DEF}
 {$F+,O-}
-unit QCRT; { version 8.32b }
+unit QCRTNM; { version 8.32b }
 
 { NOTE:  This text mode video interface requires an EGA/VGA compatable
     system.  Although many of the routines in this unit have the same
@@ -56,10 +56,6 @@ unit QCRT; { version 8.32b }
       FullCursor          Makes the cursor the same height as a character.
       GetBlink            Returns the current Blink/Intensity state.
       SetBlink            Toggles the Blink/Intensity state.
-      GetMousePos         Returns the mouses position and buttons status.
-      SetMousePos         Sets the mouses position.
-      TurnMouseOff        Disables the mouse.
-      TurnMouseOn         Enables the mouse, if it's found.
       DrawBox             Draws a box.
       DrawShadow          Draws a box shadow.
       DrawLine            Draws a line.
@@ -171,11 +167,6 @@ interface
 
   { Event Constants }
     evNothing   = $0000; { Event already handled }
-    evMouseDown = $0001; { Mouse button depressed }
-    evMouseUp   = $0002; { Mouse button released }
-    evMouseMove = $0004; { Mouse changed location }
-    evMouseAuto = $0008; { Periodic event while mouse button held down }
-    evMouse     = $000F; { Mouse event }
     evKeyDown   = $0010; { Key pressed }
     evKeyboard  = $0010; { Keyboard event }
     evCommand   = $0100; { Command event }
@@ -221,10 +212,6 @@ interface
       What: Word;
       case Word of
         evNothing: ();
-        evMouse: (
-          Buttons: Byte;
-          Double: Boolean;
-          Where: TPoint);
         evKeyDown: (
           ShiftCode : word;
           case Integer of
@@ -253,7 +240,6 @@ interface
     CheckCursor: Boolean;   { Enables automatic cursor movement }
     CheckScroll: Boolean;   { Enables screen scrolling }
     CheckChar: Boolean;     { Enables some ascii control characters }
-    CheckMouse : Boolean;   { Enables mouse detection on mode changes }
     Check101: Boolean;      { Enables use of Enhanced 101-key keyboard }
     LastMode: Word;         { Current text mode }
     TextAttr: Byte;         { Current text attribute }
@@ -268,10 +254,6 @@ interface
     FontHeight: word;       { Height of current defined font }
     UserFontSize: byte;     { Height of user defined font }
     UserFontPtr: Pointer;   { Pointer to user defined font }
-    MouseAvail: Boolean;    { Enables mouse functions and cursor }
-    MouseButtons: integer;  { Number of mouse buttons }
-    MouseShift: word;       { Value shift mouse for Screen Cooridinates }
-    MouseDouble: LongInt;   { Mouse Double Click Speed }
 
     IdleProc : procedure;      { Called while processing a delay }
     PreWriteProc : procedure;  { Called before a screen write }
@@ -342,13 +324,6 @@ interface
   function GetBlink : boolean;
   procedure SetBlink ( Blink : boolean );
 
-{ Mouse procedures }
-  procedure GetMousePos(var X, Y, Buttons : integer);
-  procedure SetMousePos(X, Y : integer);
-
-  procedure TurnMouseOff;
-  procedure TurnMouseOn;
-
 { Box and Line Functions }
   procedure DrawBox ( X1, Y1, X2, Y2, Style : byte );
   { Draws a box.  Does not move Cursor. }
@@ -392,9 +367,7 @@ interface
 implementation
 
   const
-    DefaultDoubleClick = 4;
     KeyBufSize         = 16;
-    MouseBufSize       = 16;
     CommandBufSize     = 128;
     fmClosed           = $D7B0;
     fmInput            = $D7B1;
@@ -594,14 +567,10 @@ implementation
     SysReqBreak  : word;
 
     KeyBuffer     : array[1..KeyBufSize] of TEvent;
-    MouseBuffer   : array[1..MouseBufSize] of TEvent;
     CommandBuffer : array[1..CommandBufSize] of TEvent;
     KeyBuf        : EventBuf;
-    MouseBuf      : EventBuf;
     CommandBuf    : EventBuf;
 
-    HandlerMask   : word;     { Mouse Handler Event Mask }
-    HandlerProc   : pointer;  { Mouse Handler Procedure }
 
 (* Internal Keyboard Routines *)
   function ReadKeyboardStd : word; assembler;
@@ -648,469 +617,6 @@ implementation
       MOV  AL, True
     @@Done:
     end;
-
-(* Internal Mouse Routines *)
-  function ResetMouse(var Found : boolean; var Buttons : integer) : Boolean; assembler;
-    asm
-      MOV   AX, 0
-      INT   33h
-      CMP   AX, 0
-      JE    @NoMouse
-      MOV   AL, True
-      JMP   @Done
-    @NoMouse:
-      MOV  BX, 0
-      MOV  AL, False
-    @Done:
-      LES   DI, Buttons
-      MOV   ES:[DI], BX
-      LES   DI, Found
-      MOV   ES:[DI], AL
-    end;
-
-  procedure ShowMouse; assembler;
-    asm
-      MOV  AX, 1
-      INT  33h
-    end;
-
-  procedure HideMouse; assembler;
-    asm
-      MOV  AX, 2
-      INT  33h
-    end;
-
-  procedure GetMousePos(var X, Y, Buttons : integer); assembler;
-    asm
-      MOV  AX, 3
-      MOV  BX, 0
-      INT  33h
-      LES  DI, Buttons
-      MOV  ES:[DI], BX
-
-      MOV  BX, CX
-      MOV  CX, MouseShift
-      SHR  BX, CL
-      INC  BX
-      XCHG CL, CH
-      SHR  DX, CL
-      INC  DX
-
-      LES  DI, X
-      MOV  ES:[DI], BX
-      LES  DI, Y
-      MOV  ES:[DI], DX
-    end;
-
-  procedure SetMousePos(X, Y : integer); assembler;
-    asm
-      MOV  AX, 4
-      MOV  BX, X
-      MOV  DX, Y
-      DEC  BX
-      DEC  DX
-      MOV  CX, MouseShift
-      SHL  BX, CL
-      XCHG CL, CH
-      SHL  DX, CL
-      MOV  CX, BX
-      INT  33h
-    end;
-{
-  procedure GetMousePress (Check : integer; var X, Y, Button, Counter : integer); assembler;
-    asm
-      MOV  AX, 5
-      MOV  BX, Check
-      INT  33h
-      LES  DI, X
-      MOV  ES:[DI], CX
-      LES  DI, Y
-      MOV  ES:[DI], DX
-      LES  DI, Button
-      MOV  ES:[DI], AX
-      LES  DI, Counter
-      MOV  ES:[DI], BX
-    end;
-}
-{
-  procedure GetMouseRelease (Check : integer; var X, Y, Button, Counter : integer); assembler;
-    asm
-      MOV  AX, 6
-      MOV  BX, Check
-      INT  33h
-      LES  DI, X
-      MOV  ES:[DI], CX
-      LES  DI, Y
-      MOV  ES:[DI], DX
-      LES  DI, Button
-      MOV  ES:[DI], AX
-      LES  DI, Counter
-      MOV  ES:[DI], BX
-    end;
-}
-{
-  procedure SetMouseHLimits (MinX, MaxX : integer); assembler;
-    asm
-      MOV  AX, 7
-      MOV  CX, MinX
-      MOV  DX, MaxX
-      INT  33h
-    end;
-
-  procedure SetMouseVLimits (MinY, MaxY : integer); assembler;
-    asm
-      MOV  AX, 8
-      MOV  CX, MinY
-      MOV  DX, MaxY
-      INT  33h
-    end;
-}
-{
-  procedure SetMouseGraphPtr(Image : Pointer; HotX, HotY : integer); assembler;
-    asm
-      PUSH DS
-      MOV  AX, 9
-      MOV  BX, HotX
-      MOV  CX, HotY
-      LDS  DX, Image
-      INT  33h
-      POP  DS
-    end;
-}
-
-  procedure SetMouseTextPtr(Style, AMask, XMask : word); assembler;
-    asm
-      MOV  AX, 0Ah
-      MOV  BX, Style
-      MOV  CX, AMask
-      MOV  DX, XMask
-      INT  33h
-    end;
-
-{
-  procedure GetMouseMove(var  X, Y : integer); assembler;
-    asm
-      MOV  AX, 0Bh
-      INT  33h
-      LES  DI, X
-      MOV  ES:[DI], CX
-      LES  DI, Y
-      MOV  ES:[DI], DX
-    end;
-}
-{
-  procedure SetMouseHandler(EventMask : word; Handler : Pointer); assembler;
-    asm
-      MOV  AX, 0Ch
-      MOV  CX, EventMask
-      LES  DX, Handler
-      INT  33h
-    end;
-}
-{
-  procedure LightPenEmulation(On:Boolean); assembler;
-    asm
-      CMP  On, True
-      JE   @TurnOn
-    @TurnOff:
-      MOV  AX, 0Eh
-      JMP  @Done
-    @TurnOn:
-      MOV  AX, 0Dh
-    @Done:
-      INT  33h
-    end;
-}
-{
-  procedure SetMickeysToPixels(X, Y : integer); assembler;
-    asm
-      MOV  AX, 0Fh
-      MOV  CX, X
-      MOV  DX, Y
-      INT  33h
-    end;
-}
-{
-  procedure SetMouseExclusion(X1, Y1, X2, Y2 : integer); assembler;
-    asm
-      MOV  AX, 10h
-      MOV  CX, X1
-      MOV  DX, Y1
-      MOV  SI, X2
-      MOV  DI, Y2
-      INT  33h
-    end;
-}
-{
-  procedure SetDoubleSpeed(Speed: integer); assembler;
-    asm
-      MOV  AX, 13h
-      MOV  DX, Speed
-      INT  33h
-    end;
-}
-  procedure SwapMouseHandler(var EventMask : word; var Handler : Pointer); assembler;
-    asm
-      MOV  AX, 14h
-      LES  DI, EventMask
-      MOV  CX, ES:[DI]
-      LES  DI, Handler
-      MOV  DX, ES:[DI]
-      MOV  ES, ES:[DI + 2]
-      INT  33h
-      MOV  BX, ES
-      LES  DI, Handler
-      MOV  ES:[DI], DX
-      MOV  ES:[DI + 2], BX
-      LES  DI, EventMask
-      MOV  ES:[DI], CX
-    end;
-{
-  procedure GetMouseSaveSize(var BufSize : word); assembler;
-    asm
-      MOV  AX, 15h
-      INT  33h
-      LES  DI, BufSize
-      MOV  ES:[DI], BX
-    end;
-}
-{
-  procedure SaveMouseState(Buffer : Pointer); assembler;
-    asm
-      MOV  AX, 16h
-      LES  DX, Buffer
-      INT  33h
-    end;
-}
-{
-  procedure RestoreMouseState(Buffer : Pointer); assembler;
-    asm
-      MOV  AX, 17h
-      LES  DX, Buffer
-      INT  33h
-    end;
-}
-{
-  procedure SetAltMouseHandler(EventMask : word; Handler : Pointer); assembler;
-    asm
-      MOV  AX, 18h
-      MOV  CX, EventMask
-      LES  DX, Handler
-      INT  33h
-    end;
-}
-{
-  procedure GetAltMouseHandler(var EventMask : word; var Handler : Pointer); assembler;
-    asm
-      MOV  AX, 19h
-      LES  DI, EventMask
-      MOV  CX, ES:[DI]
-      LES  DI, Handler
-      MOV  DX, ES:[DI]
-      MOV  ES, ES:[DI + 2]
-      INT  33h
-      MOV  BX, ES
-      LES  DI, Handler
-      MOV  ES:[DI], DX
-      MOV  ES:[DI + 2], BX
-      LES  DI, EventMask
-      MOV  ES:[DI], CX
-    end;
-}
-{
-  procedure SetMouseSensitivity(X, Y, Speed : integer); assembler;
-    asm
-      MOV  AX, 1Ah
-      MOV  BX, X
-      MOV  CX, Y
-      MOV  DX, Speed
-      INT  33h
-    end;
-}
-{
-  procedure GetMouseSensitivity(var X, Y, Speed : integer); assembler;
-    asm
-      MOV  AX, 1Ah
-      INT  33h
-      LES  DI, X
-      MOV  ES:[DI], BX
-      LES  DI, Y
-      MOV  ES:[DI], CX
-      LES  DI, Speed
-      MOV  ES:[DI], DX
-    end;
-}
-{
-  procedure SetMouseIntRate(Rate:word); assembler;
-    asm
-      MOV  AX, 1Ch
-      MOV  BX, Rate
-      INT  33h
-    end;
-}
-{
-  procedure SetMousePage(Page : integer); assembler;
-    asm
-      MOV  AX, 1Dh
-      MOV  BX, Page
-      INT  33h
-    end;
-}
-{
-  procedure GetMousePage(var Page : integer); assembler;
-    asm
-      MOV  AX, 1Eh
-      INT  33h
-      LES  DI, Page
-      MOV  ES:[DI], BX
-    end;
-}
-{
-  function DisableMouse(var Success:Boolean;var PrevInt : Pointer) : boolean; assembler;
-    asm
-      MOV  AX, 1Fh
-      INT  33h
-      CMP  AX, $FFFF
-      JE   @Failed
-    @Success:
-      MOV  AX, True
-      MOV  CX, ES
-    @Failed:
-      MOV  AX, False
-      MOV  CX, 0
-      MOV  BX, 0
-    @Done:
-      LES  DI, Success
-      MOV  ES:[DI], AX
-      LES  DI, PrevInt
-      MOV  ES:[DI], BX
-      MOV  ES:[DI + 2], CX
-    end;
-}
-{
-  procedure EnableMouse; assembler;
-    asm
-      MOV  AX, 20h
-      INT  33h
-    end;
-}
-{
-  function SoftResetMouse(var Found : boolean; var Buttons : integer) : Boolean; assembler;
-    asm
-      MOV   AX, 21h
-      INT   33h
-      CMP   AX, 21h
-      JNE   @NoMouse
-      MOV   AL, True
-      JMP   @Done
-    @NoMouse:
-      MOV  BX, 0
-      MOV  AL, False
-    @Done:
-      LES   DI, Buttons
-      MOV   ES:[DI], BX
-      LES   DI, Found
-      MOV   ES:[DI], AL
-    end;
-}
-{
-  procedure SetMouseLanguage(Language:word); assembler;
-    asm
-      MOV  AX, 22h
-      MOV  BX, Language
-      INT  33h
-    end;
-}
-{
-  procedure GetMouseLanguage(var Language:word); assembler;
-    asm
-      MOV  AX, 23h
-      INT  33h
-      LES  DI, Language
-      MOV  ES:[DI], BX
-    end;
-}
-{
-  procedure GetMouseInfo(var Version:word; var MType, IRQ : byte); assembler;
-    asm
-      MOV  AX, 24h
-      INT  33h
-      LES  DI, Version
-      MOV  ES:[DI], BX
-      LES  DI, MType
-      MOV  ES:[DI], CH
-      LES  DI, IRQ
-      MOV  ES:[DI], CL
-    end;
-}
-  procedure MouseHandler ( Flags, CS, IP, AX, BX, CX, DX, SI,
-    DI, DS, ES, BP : word); interrupt;
-    const
-      LastX : word = 0;
-      LastY : word = 0;
-      LastB : word = 0;
-      LastC : array[0..15] of LongInt = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-    var
-      Event : TEvent;
-      I     : byte;
-      PutIt : boolean;
-    begin
-      {
-        AX = Event Flag
-        BX = Button State
-        CX = X coor
-        DX = Y Coor
-        SI = X Movement
-        DI = Y Movement
-        DS = Mouse Driver Data Segment
-      }
-      PutIt             := False;
-      Event.What        := evNothing;
-      Event.Double      := False;
-      Event.Buttons     := BX;
-      Event.Where.X     := (CX shr Lo(MouseShift)) + 1;
-      Event.Where.Y     := (DX shr Hi(MouseShift)) + 1;
-      if (Event.Where.X <> LastX) or (Event.Where.Y <> LastY) then
-        begin
-          PutIt      := True;
-          Event.What := Event.What or evMouseMove;
-        end;
-      if (Event.Buttons <> LastB) then
-        begin
-          PutIt := True;
-          for I := 0 to 15 do
-            if LastB and (1 Shl I) <> Event.Buttons and (1 shl I) then
-              case Event.Buttons and (1 shl I) = (1 shl I) of
-                False : Event.What := Event.What or evMouseUp;
-                True  : begin
-                  Event.What := Event.What or evMouseDown;
-                  if TimerTick - LastC[I] <= MouseDouble then
-                    Event.Double := True;
-                  LastC[I] := TimerTick;
-                end;
-              end;
-        end;
-      LastX := Event.Where.X;
-      LastY := Event.Where.Y;
-      LastB := Event.Buttons;
-      if PutIt then PutEvent(Event);
-      asm
-        MOV  AX, 0Bh
-        INT  33h
-        MOV  SP,BP
-        pop  bp
-        pop  es
-        pop  ds
-        pop  di
-        pop  si
-        pop  dx
-        pop  cx
-        pop  bx
-        pop  ax
-        retf
-      end;
-    end;
-
 
 (* Internal service routines *)
   procedure GetIntVec ( IntNo : byte; var Vec : pointer ); assembler;
@@ -1265,43 +771,16 @@ implementation
 
   procedure PreWriteMouseProc; far;
     begin
-      If MouseAvail then HideMouse;
       PreWriteProc;
     end;
 
   procedure PostWriteMouseProc; far;
     begin
       PostWriteProc;
-      If MouseAvail then ShowMouse;
     end;
 
   procedure ReInitMouseProc; far;
     begin
-      if CheckMouse then
-        begin
-          ResetMouse (MouseAvail, MouseButtons);
-          if MouseAvail then
-            begin
-              HandlerMask := $FFFF;
-              HandlerProc := @MouseHandler;
-              SwapMouseHandler(HandlerMask, HandlerProc);
-            end;
-        end;
-      if MouseAvail then ShowMouse;
-      case LastMode and $FF of
-      { TextModes }
-        0..1    : MouseShift := $0304;
-        2..3, 7 : MouseShift := $0303;
-      { Graphics Modes }
-        $0D, $13 : MouseShift := $0304;
-        $0E      : MouseShift := $0303;
-        $0F, $10 : MouseShift := $0403; { Not Correct }
-        $11, $12 : MouseShift := $0403;
-      end;
-      Case LastMode and $FF of
-        0..3 : SetMouseTextPtr(0, $7FFF, $7F00);
-        7    : SetMouseTextPtr(0, $FFFF, $1000);
-      end;
     end;
 
   procedure PreWrite; assembler;
@@ -1468,8 +947,6 @@ implementation
   procedure DoneVideoUnit; far;
     begin
       ExitProc      := OldExitProc;
-      if MouseAvail then HideMouse;
-      ResetMouse(MouseAvail, MouseButtons);
       IdleProc      := NullProc;
       PreWriteProc  := NullProc;
       PostWriteProc := NullProc;
@@ -1484,7 +961,6 @@ implementation
       ReWrite(Output);
       Reset(Input);
       CommandBuf.Done;
-      MouseBuf.Done;
       KeyBuf.Done;
     end;
 
@@ -1494,7 +970,6 @@ implementation
       P : Pointer;
     begin
       KeyBuf.Init    (@KeyBuffer, KeyBufSize);
-      MouseBuf.Init  (@KeyBuffer, KeyBufSize);
       CommandBuf.Init(@KeyBuffer, KeyBufSize);
       IdleProc      := NullProc;
       PreWriteProc  := NullProc;
@@ -1504,13 +979,8 @@ implementation
       CheckBreak    := True;
       CheckPrint    := True;
       CheckSysReq   := True;
-      CheckMouse    := True;
       InsertMode    := True;
       Check101      := (Mem[Seg0040:$0096]) and $10 = $10;
-      MouseAvail    := False;
-      MouseButtons  := 0;
-      MouseShift    := $0303;
-      MouseDouble   := DefaultDoubleClick;
       CheckEOF      := False;
       CheckSnow     := False;
       CheckCursor   := True;
@@ -3040,29 +2510,6 @@ implementation
       INT $10
     end;
 
-{ Mouse procedures }
-  procedure TurnMouseOff;
-    begin
-      if MouseAvail then HideMouse;
-      CheckMouse   := False;
-      MouseAvail   := False;
-      MouseButtons := 0;
-    end;
-
-  procedure TurnMouseOn;
-    begin
-      if MouseAvail then HideMouse;
-      CheckMouse := True;
-      ResetMouse(MouseAvail, MouseButtons);
-      if MouseAvail then
-         begin
-           HandlerMask := $FFFF;
-           HandlerProc := @MouseHandler;
-           SwapMouseHandler(HandlerMask, HandlerProc);
-         end;
-      if MouseAvail then ShowMouse;
-    end;
-
 { Box and line functions }
   procedure DrawBox ( X1, Y1, X2, Y2, Style : byte );
     var
@@ -3238,7 +2685,6 @@ implementation
     begin
       CommandBuf.Purge;
       KeyBuf.Purge;
-      MouseBuf.Purge;
     end;
 
   procedure ClearEvent(var Event : TEvent);
@@ -3284,7 +2730,6 @@ implementation
       else
       if Not CommandBuf.GetEvent(Event) then
       if Not KeyBuf.GetEvent(Event)     then
-      if Not MouseBuf.GetEvent(Event)   then
         IdleMouseProc;
     end;
 
@@ -3559,62 +3004,6 @@ implementation
         end;
       end;
 
-    procedure HandleMouse;
-      function Convert(var X, Y : byte) : boolean;
-        begin
-          Convert := False;
-          if (X < Lo(WindMin) + 1) or (X > Lo(WindMax) + 1) or
-          (Y < Hi(WindMin) + 1) or (Y > Hi(WindMax) + 1) then
-            Exit;
-          X := X - Lo(WindMin);
-          Y := Y - Hi(WindMin);
-          if (Y <> OrgY) or (X < OrgX) or (X > OrgX + MaxWide - 1) then
-            Exit;
-          X := X - OrgX;
-          Y := Y - OrgY + 1;
-          GotoXY ( 2, 2);
-          Convert := True;
-        end;
-
-      var
-        X, Y : Byte;
-
-      begin
-        if Event.What and evMouseDown = evMouseDown then
-          begin
-            X := Event.Where.X;
-            Y := Event.Where.Y;
-            if Convert(X, Y) then
-              begin
-                if Event.Double or ((X > 0) and (X < MaxWide - 1)) then
-                  begin
-                    while (CurX > X) and Left(False) do;
-                    while (CurX < X) and Right(False) do;
-                  end
-                else
-                if X = 0 then
-                  begin
-                    if OfsX > 0 then
-                      Dec(OfsX)
-                    else
-                    if CurX > 1 then
-                      Dec(CurX);
-                  end
-                else
-                  begin
-                    if OfsX + MaxWide - 3 < Length(Dest) then
-                      Inc(OfsX)
-                    else
-                    if CurX + OfsX <= Length(Dest) then
-                      Inc(CurX);
-                  end;
-                DisplayStr;
-              end
-            else
-              DoneFlag := True;
-          end;
-      end;
-
     begin
       Cursor := GetCursor;
       OrgX := WhereX;
@@ -3636,7 +3025,6 @@ implementation
         until Event.What <> evNothing;
         HideCursor;
         if Event.What and evSystem <> evNothing then DoneFlag := True else
-        if Event.What and evMouse  <> evNothing then HandleMouse else
         if Event.What and evKeyDown = evKeyDown then HandleKeyboard;
       until DoneFlag;
       SetCursor(Cursor);

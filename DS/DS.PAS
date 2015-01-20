@@ -10,7 +10,7 @@ http://mozilla.org/MPL/2.0/.
 {$M 16384,0,655360}
 program Directory;
 
-  Uses Dos, QCrt, Scroller, StrAsm;
+  Uses Dos, QCrtNM, Scroller, StrAsm;
 
 {---------------------------------------------------------------------------}
   type

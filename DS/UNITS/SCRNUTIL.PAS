@@ -77,7 +77,7 @@ interface
          (Red:63; Green:21; Blue:63), (Red:63; Green:63; Blue:21), (Red:63; Green:63; Blue:63));
 implementation
 
-   uses Dos, QCRT;
+   uses Dos, QCRTNM;
 {-----------------------------------------------------------------------------}
    procedure Cursor.SetCursor(NewCursor : Word);
       var

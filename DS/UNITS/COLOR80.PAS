@@ -12,7 +12,7 @@ unit Color80;
 
 interface
 
-   uses QCRT, ScrnUtil;
+   uses QCRTNM, ScrnUtil;
 
   Const
     Color80Version = '80 Column Color, Direct Video Driver Version #1.2';
@@ -80,17 +80,17 @@ implementation
 {----------------------------------------------------------------------------}
   procedure MaxWindow;
     begin
-      QCRT.Window ( 1, 1, 80, 25 );
-      QCRT.Window ( 1, 1, 80, 43 );
-      QCRT.Window ( 1, 1, 80, 50 );
+      QCRTNM.Window ( 1, 1, 80, 25 );
+      QCRTNM.Window ( 1, 1, 80, 43 );
+      QCRTNM.Window ( 1, 1, 80, 50 );
     end;
 
   procedure BasicType.GetWindow ( var X1, Y1, X2, Y2 : byte );
     begin
-      X1 := Lo(QCRT.WindMin) + 1;
-      Y1 := Hi(QCRT.WindMin) + 1;
-      X2 := Lo(QCRT.WindMax) + 1;
-      Y2 := Hi(QCRT.WindMax) + 1;
+      X1 := Lo(QCRTNM.WindMin) + 1;
+      Y1 := Hi(QCRTNM.WindMin) + 1;
+      X2 := Lo(QCRTNM.WindMax) + 1;
+      Y2 := Hi(QCRTNM.WindMax) + 1;
     end;
 
   procedure BasicType.FixXY ( var X, Y : byte );
