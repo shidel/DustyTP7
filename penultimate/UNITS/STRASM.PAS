@@ -20,8 +20,7 @@ interface
     PString = ^String;
 
   function NextPos ( SubStr : String; S : String; StartPos : byte ) : byte;
-  { Like Pos function, except starts searching at Startpos Byte.
-    Uses Pos function. }
+  { Like Pos function, except starts searching at Startpos Byte. Uses Pos function. }
   function UCase      ( Str : String )              : String; {3.89x}
   { Converts lowercase letters to uppercase }
   function LCase      ( Str : String )              : String; {2.36x}

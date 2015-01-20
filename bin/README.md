@@ -16,7 +16,8 @@ Copyright 1990-2015 Jerome Shidel.
 
 **_DS.EXE_** Smooth scrolling directory listing program, based on earlier version of D.EXE.
 
-**_DRIVE.COM_** Returns type information about the current active drive.
+**_DTYPE.COM_** (Actually, DRIVE.COM but renamed to reduce conflict with DRIVE.EXE)
+Returns type information about the current active drive.
 
 **_DRIVE.EXE_** Returns some general information about all drives.
 
