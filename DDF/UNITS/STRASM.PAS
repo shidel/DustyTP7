@@ -7,7 +7,7 @@ http://mozilla.org/MPL/2.0/.
 }
 
 {$I TURBO.DEF}
-unit StrAsm; { version 2.11a }
+unit StrAsm; { version 2.14a }
 {$D-,Y-,L-}
 { This unit contains many different string manipulation routines, many
   of which are written in assembly language for faster execution. }
@@ -16,9 +16,11 @@ interface
 
   uses StrSize;
 
+  type
+    PString = ^String;
+
   function NextPos ( SubStr : String; S : String; StartPos : byte ) : byte;
-  { Like Pos function, except starts searching at Startpos Byte.
-    Uses Pos function. }
+  { Like Pos function, except starts searching at Startpos Byte. Uses Pos function. }
   function UCase      ( Str : String )              : String; {3.89x}
   { Converts lowercase letters to uppercase }
   function LCase      ( Str : String )              : String; {2.36x}
@@ -45,6 +47,8 @@ interface
   function HEXByte ( B : byte    ) : Str2;
   function HEXWord ( W : Word    ) : Str4;
   function HEXLong ( L : LongInt ) : Str8;
+  function HEXPtr  ( P : Pointer ) : Str9;
+
   function BINByte ( B : Byte    ) : Str8;
   function BINWord ( W : Word    ) : Str16;
   function BINLong ( L : LongInt ) : Str32;
@@ -53,7 +57,7 @@ interface
   { Returns True/False }
   function IntStr   ( L : LongInt ) : Str20;
   { Returns String from Long Integer }
-  function RealStr ( R : Extended; P : byte ) : Str40;
+  function RealStr ( R : {$IFOPT N+} Extended {$ELSE} Real {$ENDIF}; P : byte ) : Str40;
   { Returns String from Extended Real number }
   function Comma ( S : String ) : String;
   { Inserts commas into a number string handles positive, negative, integer,
@@ -65,10 +69,19 @@ interface
   { removes matching characters from a string }
   function ReplaceStr ( Str : String; O, N : Char ) : String; {new}
   { Replaces characters in a string }
-  procedure AddChr ( var S : OpenString; C : Char );
+  procedure AddChr ( var S : String; C : Char );
   { Adds Character to end of String }
-  procedure AddStr ( var S1 : OpenString; S2 : String );
+  procedure AddStr ( var S1 : String; S2 : String );
   { Adds Character to end of String }
+  function ClipStr( S : String; Len : byte ) : String;
+  { Clips a string to a certian length, or pads it with spaces }
+  function FlipStr( S : String ) : String;
+  { Reverses the text in a string }
+
+  function  AllocStr(S: String) : PString;
+  function  ReAllocStr(var P : PString; S : String) : PString;
+  procedure DeallocStr(var P : PString);
+  function  GetStr(P : PString) : String;
 
 implementation
 
@@ -271,7 +284,10 @@ implementation
   function CSpace ( Str : String; N : Byte ) : String;
     begin
       Str := Trim(Str);
-      CSpace := RSpace(Space((N div 2) - (Length(Str) div 2)) + Str, N);
+      if N < Length(Str) then
+        CSpace := Copy(Str, 1, N)
+      else
+        CSpace := RSpace(Space((N div 2) - (Length(Str) div 2)) + Str, N);
     end;
 
   function ZeroPad ( Str : String; N : byte ) : String;
@@ -318,6 +334,12 @@ implementation
       HEXLong := HEXWord(WordCast(L)[1]) + HEXWord(WordCast(L)[0]);
     end;
 
+  function HexPtr  ( P : Pointer ) : Str9;
+    begin
+      HexPtr := HexWord(Seg(P^)) + ':' + HexWord(Ofs(P^));
+    end;
+
+
   function BINByte ( B : Byte ) : Str8; assembler;
     asm
       LES DI, @Result
@@ -358,7 +380,7 @@ implementation
       IntStr := S;
     end;
 
-  function RealStr ( R : Extended; P : byte ) : Str40;
+  function RealStr ( R : {$IFOPT N+} Extended {$ELSE} Real {$ENDIF}; P : byte ) : Str40;
     var
       S : Str40;
     begin
@@ -403,13 +425,13 @@ implementation
       Comma := S;
     end;
 
-  procedure AddChr ( var S : OpenString; C : Char );
+  procedure AddChr ( var S : String; C : Char );
     begin
       Inc(Byte(S[0]));
       S[Byte(S[0])] := C;
     end;
 
-  procedure AddStr ( var S1 : OpenString; S2: String );
+  procedure AddStr ( var S1 : String; S2: String );
     var
       MoveLen : Byte;
     begin
@@ -418,5 +440,71 @@ implementation
       Move ( S2[1], S1[Length(S1) + 1], MoveLen );
       Inc(Byte(S1[0]), MoveLen);
     end;
+
+  function ClipStr( S : String; Len : byte ) : String;
+    begin
+      S := RSpace(S, Len);
+      if Length(S) > Len then S := Copy(S, 1, Len - 3) + '...';
+      ClipStr := S;
+    end;
+
+  function FlipStr( S : String ) : String;
+    var
+      I : byte;
+      C : Char;
+    begin
+      if Length(S) > 1 then
+        begin
+          for I := 0 to Length(S) div 2 - 1 do
+            begin
+              C := S[I + 1];
+              S[I + 1] := S[Length(S) - I];
+              S[Length(S) - I] := C;
+            end;
+        end;
+      FlipStr := S;
+    end;
+
+  function  AllocStr(S: String) : PString;
+    var
+      P : PString;
+    begin
+      P := nil;
+      if (S <> '') and (MaxAvail > Length(S) + 1) then
+        begin
+          GetMem(P, Length(S) + 1);
+          Move(S, P^, Length(S) + 1);
+        end;
+      AllocStr := P;
+    end;
+
+  procedure DeallocStr(var P : PString);
+    begin
+      if Assigned(P) then
+        FreeMem(P, Length(P^) + 1);
+      P := nil;
+    end;
+
+  function  ReAllocStr(var P : PString; S : String) : PString;
+    var
+      T : PString;
+    begin
+      T := AllocStr(S);
+      if Assigned(T) or (S = '') then
+        begin
+          if Assigned(P) then DeallocStr(P);
+          P := T;
+        end;
+      ReAllocStr := P;
+    end;
+
+  function GetStr(P : PString) : String;
+    begin
+      if Assigned(P) then
+        GetStr := P^
+      else
+        GetStr := '';
+    end;
+
 
 end.

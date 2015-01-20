@@ -8,7 +8,7 @@ http://mozilla.org/MPL/2.0/.
 
 {$I TURBO.DEF}
 unit Files; { version 6.01 }
-{$D-,Y-,L-}
+{$D-,Y-,L-,I-}
 { This unit contains objects for reading/writing disk files. }
 
 interface

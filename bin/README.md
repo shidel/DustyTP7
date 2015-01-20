@@ -14,6 +14,10 @@ Copyright 1990-2015 Jerome Shidel.
 
 **_D.EXE_** Advanced directory listing program v7.10.
 
+**_DDF.EXE_** Directory Description File Editor. Works with **_D.EXE_**
+
+**_DDFLINK.EXE_** Automatic Description File Editor Message Linker.
+
 **_DS.EXE_** Smooth scrolling directory listing program, based on earlier version of D.EXE.
 
 **_DTYPE.COM_** (Actually, DRIVE.COM but renamed to reduce conflict with DRIVE.EXE)
