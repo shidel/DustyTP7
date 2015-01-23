@@ -52,7 +52,7 @@ will be lost.
 
 **_READBOOT.EXE_** Utility to read and save a floppy boot sector.
 
-**_SERIAL.PAS_** Experimental program to read and write the serial number of disk drives.
+**_SERIAL.EXE_** Experimental program to read and write the serial number of disk drives.
 
 _SBPMIXER.DRV_ Binary device driver for controlling a SoundBlaster Pro Mixer chipset.
 
