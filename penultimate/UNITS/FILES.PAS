@@ -7,983 +7,1083 @@ http://mozilla.org/MPL/2.0/.
 }
 
 {$I TURBO.DEF}
-unit Files;  { version 5.12 }
-
-{ This unit contains object style file handling routines for random access
-  files. }
+unit Files; { version 6.01 }
+{$D-,Y-,L-}
+{ This unit contains objects for reading/writing disk files. }
 
 interface
 
-  uses Dos;
+  uses ErConst, DosVer;
 
   const
-    { DOS file attributes constants }
-    faReadOnly   = $01;
-    faHidden     = $02;
-    faSystem     = $04;
-    faVolumeID   = $08;
-    faDirectory  = $10;
-    faArchive    = $20;
-    faAnyFile    = $3F;
+    { File status flags }
+    flInvalid  = $0000; { Is Not Valid }
+    flAssigned = $0001; { IsAssigned }
+    flOpened   = $0002; { IsOpen }
+    flFlush    = $0004; { Needs Flushed }
+    flErase    = $0008; { Erase when disposed (not advised) }
+    flError    = $0010; { Is Error Code }
+    flRead     = $0020; { File can be read }
+    flWrite    = $0040; { File can be written }
+    flRandom   = $0060; { File can be read or written }
 
-    { File mode constants }
-    fmReadOnly   = $00;
-    fmWriteOnly  = $01;
-    fmReadWrite  = $02;
-
-    { File error action constants }
-    acAbort = $01;
-    acIgnore = $02;
-    acRetry = $04;
+    { SetIOResult return commands }
+    fcOK       = $00;
+    fcIgnore   = $01;
+    fcRetry    = $02;
+    fcAbort    = $03;
 
   type
     PFile = ^TFile;
     TFile = object
+        Ptr    : LongInt;
+        Mode   : word;
+        Flags  : word;
+        Name   : String;
+        Result : integer;
       constructor Init;
-      destructor Done; virtual;
-      function ErrorHandler ( ACode : word; AAction : byte ) : byte; virtual;
-      function IOResult : integer; virtual;
-      procedure SetIOResult ( AIOResult : integer ); virtual;
-      function Assign ( AFIleName : OpenString ) : boolean; virtual;
-      function FileName : string; virtual;
-      function FileExist : boolean; virtual;
-      function Reset : boolean; virtual;
-      function ReWrite : boolean; virtual;
-      function Close : boolean; virtual;
-      function Truncate : boolean; virtual;
-      function Flush : boolean; virtual;
-      function FileSize : longint; virtual;
-      function FilePos : longint; virtual;
-      function Erase : boolean; virtual;
-      function Rename ( AFileName : OpenString ) : boolean; virtual;
-      function Seek ( APosition : LongInt ) : boolean; virtual;
-      function BlockRead (const AAdr; ASize : word; var ACount : word ) : boolean; virtual;
-      function BlockWrite (const AAdr; ASize : word; var ACount : word ) : boolean; virtual;
-      function GetFAttr ( var AAttr : word ) : boolean; virtual;
-      function SetFAttr ( AAttr : word ) : boolean; virtual;
-      function GetFTime ( var ATime : LongInt ) : boolean; virtual;
-      function SetFTime ( ATime : LongInt ) : boolean; virtual;
-      function GetSearchRec ( var ASearchRec : SearchRec ) : boolean; virtual;
-
-      { This procedures should rarely need overridden. }
-      function Open : boolean; virtual;
-      function Create : boolean; virtual;
-      function EOF : boolean; virtual;
-      function SeekEOF : boolean; virtual;
-
-      { Record variable types }
-      function ReadRecord    (const AAdr; ASize : word) : boolean; virtual;
-      function WriteRecord   (const AAdr; ASize : word) : boolean; virtual;
-
-      { Boolean variable types }
-      function ReadBoolean   (const ABoolean)  : boolean; virtual;
-      function WriteBoolean  (const ABoolean)  : boolean; virtual;
-      function ReadByteBool  (const AByteBool) : boolean; virtual;
-      function WriteByteBool (const AByteBool) : boolean; virtual;
-      function ReadWordBool  (const AWordBool) : boolean; virtual;
-      function WriteWordBool (const AWordBool) : boolean; virtual;
-      function ReadLongBool  (const ALongBool) : boolean; virtual;
-      function WriteLongBool (const ALongBool) : boolean; virtual;
-
-      { Integer variable types }
-      function ReadByte      (const AByte) : boolean; virtual;
-      function WriteByte     (const AByte) : boolean; virtual;
-      function ReadWord      (const AWord) : boolean; virtual;
-      function WriteWord     (const AWord) : boolean; virtual;
-      function ReadShortInt  (const AShortInt) : boolean; virtual;
-      function WriteShortInt (const AShortInt) : boolean; virtual;
-      function ReadInteger   (const AInteger) : boolean; virtual;
-      function WriteInteger  (const AInteger) : boolean; virtual;
-      function ReadLongInt   (const ALongInt) : boolean; virtual;
-      function WriteLongInt  (const ALongInt) : boolean; virtual;
-
-      { Real variable types }
-      function ReadSingle    (const ASingle) : boolean; virtual;
-      function WriteSingle   (const ASingle) : boolean; virtual;
-      function ReadReal      (const AReal) : boolean; virtual;
-      function WriteReal     (const AReal) : boolean; virtual;
-      function ReadDouble    (const ADouble) : boolean; virtual;
-      function WriteDouble   (const ADouble) : boolean; virtual;
-      function ReadComp      (const AComp) : boolean; virtual;
-      function WriteComp     (const AComp) : boolean; virtual;
-      function ReadExtended  (const AExtended) : boolean; virtual;
-      function WriteExtended (const AExtended) : boolean; virtual;
-
-      { Character variable types }
-      function ReadChar  (const AChar) : boolean; virtual;
-      function WriteChar (const AChar) : boolean; virtual;
-
-      { String variable types}
-      function ReadString  (const AString; AStrSize : word) : boolean; virtual;
-      function WriteString (const AString; AStrSize : word) : boolean; virtual;
-
-      function GetString   : String; virtual;
-      function PutString   (const AString) : boolean; virtual;
-
-    private
-      Handle : File;
-      Name : String[127];
-      Error : integer;
-      ErrorCount : integer;
-      OpenFlag : boolean;
-      NeedFlush : boolean;
+      destructor  Done; virtual;
+      procedure Assign( AFileName : String ); virtual;
+      procedure BlockRead(const ABuf; ACount: Word; var AResult: Word); virtual;
+      procedure BlockWrite(const ABuf; ACount: Word; var AResult: Word); virtual;
+      procedure Close; virtual;
+      procedure Erase; virtual;
+      function  FileSize: Longint; virtual;
+      procedure Flush; virtual;
+      procedure Rename( ANewName : String ); virtual;
+      procedure Reset; virtual;
+      procedure Rewrite; virtual;
+      procedure Seek(AFilePos: Longint); virtual;
+      procedure Truncate; virtual;
+      function  SetIOResult ( AIOResult : integer ) : byte; virtual;
+    { the following procedures/functions should not need to be overridden }
+      procedure Append;
+      procedure Copy(var AFile : PFile; ACount: LongInt);
+      function  Sof: Boolean;
+      function  Eof: Boolean;
+      function  FilePos: Longint;
+      function  IOResult: Integer;
+      function  SeekSof: Boolean;
+      function  SeekEof: Boolean;
+      procedure SetFileMode ( AMode : word );
+    { Should never, ever need overridden (they all call BlockRead) }
+      procedure Insert(ACount : longint);
+      procedure Delete(ACount : longint);
+      procedure ReadRecord    (const AAdr; ASize : word);
+      procedure WriteRecord   (const AAdr; ASize : word);
+      procedure ReadChar      (const AChr );
+      procedure WriteChar     (const AChr );
+      procedure ReadBoolean   (const ABoolean);
+      procedure WriteBoolean  (const ABoolean);
+      procedure ReadByteBool  (const AByteBool);
+      procedure WriteByteBool (const AByteBool);
+      procedure ReadWordBool  (const AWordBool);
+      procedure WriteWordBool (const AWordBool);
+      procedure ReadLongBool  (const ALongBool);
+      procedure WriteLongBool (const ALongBool);
+      procedure ReadByte      (const AByte);
+      procedure WriteByte     (const AByte);
+      procedure ReadWord      (const AWord);
+      procedure WriteWord     (const AWord);
+      procedure ReadShortInt  (const AShortInt);
+      procedure WriteShortInt (const AShortInt);
+      procedure ReadInteger   (const AInteger);
+      procedure WriteInteger  (const AInteger);
+      procedure ReadLongInt   (const ALongInt);
+      procedure WriteLongInt  (const ALongInt);
+      procedure ReadReal      (const AReal);
+      procedure WriteReal     (const AReal);
+      procedure ReadSingle    (const ASingle);
+      procedure WriteSingle   (const ASingle);
+      procedure ReadDouble    (const ADouble);
+      procedure WriteDouble   (const ADouble);
+      procedure ReadComp      (const AComp);
+      procedure WriteComp     (const AComp);
+      procedure ReadExtended  (const AExtended);
+      procedure WriteExtended (const AExtended);
+      procedure ReadString  (const AString; AStrSize : word);
+      procedure WriteString (const AString; AStrSize : word);
+      function  GetString   : String;
+      procedure PutString   (const AString);
+    { Text files }
+      function  Soln: boolean;
+      function  Eoln: Boolean;
+      function  SeekSoln: boolean;
+      function  SeekEoln: Boolean;
+      function  SeekLn ( ANumber : LongInt ) : boolean;
+      procedure Read  ( const AStr; AMax : word );
+      procedure Write ( const AStr );
+      procedure ReadLn  ( const AStr; AMax : word );
+      procedure WriteLn ( const AStr );
+      function  LengthLn : word;
+      procedure InsertLn ( ALen : word );
+      procedure DeleteLn;
+      procedure ResizeLn ( ALen : word );
     end;
 
-    PBufFile = ^TBufFile;
-    TBufFile = object ( TFile )
-      constructor Init ( ABufSize : word );
+    PDosFile = ^TDosFile;
+    TDosFile = object( TFile )
+        FRec : File;
+      constructor Init;
       destructor  Done; virtual;
-      function GetBufSize : word; virtual;
-      function Reset : boolean; virtual;
-      function ReWrite : boolean; virtual;
-      function Truncate : boolean; virtual;
-      function Flush : boolean; virtual;
-      function FileSize : longint; virtual;
-      function FilePos : longint; virtual;
-      function Seek ( APosition : LongInt ) : boolean; virtual;
-      function BlockRead (const AAdr; ASize : word; var ACount : word ) : boolean; virtual;
-      function BlockWrite (const AAdr; ASize : word; var ACount : word ) : boolean; virtual;
-    private
-      BufSize : word;
-      BufPtr : pointer;
-      FPos : LongInt;
-      FLen : LongInt;
-      BPos : LongInt;
-      BLen : word;
-      procedure DumbClose;
-      function RelocateBuf( ASize : word ) : boolean;
+      procedure Assign( AFileName : String ); virtual;
+      procedure BlockRead(const ABuf; ACount: Word; var AResult: Word); virtual;
+      procedure BlockWrite(const ABuf; ACount: Word; var AResult: Word); virtual;
+      procedure Close; virtual;
+      procedure Erase; virtual;
+      function FileSize: Longint; virtual;
+      procedure Flush; virtual;
+      procedure Rename( ANewName : String ); virtual;
+      procedure Reset; virtual;
+      procedure Rewrite; virtual;
+      procedure Seek(AFilePos: Longint); virtual;
+      procedure Truncate; virtual;
+      function GetName : String;
     end;
 
 implementation
 
-{$I-}
+  const
+    CRLF : String[2] = #13#10;
+
+  var
+    Buf : array[0..511] of byte;
 
   constructor TFile.Init;
     begin
+      Ptr := 0;
+      Mode := 0;
       Name := '';
-      OpenFlag := False;
-      NeedFlush := False;
-      System.Assign(Handle, Name);
-      Error := System.IOResult;
-      ErrorCount := 0;
+      Flags := flInvalid;
+      SetIOResult(erNone);
     end;
 
   destructor TFile.Done;
     begin
-      if OpenFlag then Close;
+      if Flags and flOpened = flOpened then Close;
+      if Flags and flErase = flErase then Erase;
     end;
 
-  function TFile.ErrorHandler ( ACode : Word; AAction : byte ) : byte;
+  procedure TFile.Assign( AFileName : String );
     begin
-      ErrorHandler := AAction;
-      if (ACode <> 0) and (AAction <> acIgnore) then
+      if (Flags and flOpened = flOpened) then
+        SetIOResult(erFile_access_denied)
+      else
         begin
-{          if ErrorCount > 3 then
-            System.RunError ( ACode )
-          else                        }
-          if ErrorCount <= 3 then
-            begin
-              Inc(ErrorCount);
-              ErrorHandler := acRetry;
-            end;
+          SetIOResult ( erNone );
+          Name := AFileName;
         end;
     end;
 
-  function TFile.IOResult : integer;
+  procedure TFile.BlockRead(const ABuf; ACount: Word; var AResult: Word);
     begin
-      IOResult := Error;
-    end;
-
-  procedure TFile.SetIOResult ( AIOResult : integer );
-    begin
-      Error := AIOResult;
-    end;
-
-  function TFile.Assign ( AFIleName : OpenString ) : boolean;
-    begin
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          begin
-            Assign := False;
-            Exit;
-          end;
-      ErrorCount := 0;
-      Name := AFileName;
-      repeat
-        System.Assign ( Handle, Name );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      Assign := Error = 0;
-    end;
-
-  function TFile.FileName : string;
-    begin
-      FileName := Name;
-    end;
-
-  function TFile.FileExist : boolean;
-    var
-      TRec : Dos.SearchRec;
-    begin
-      ErrorCount := 0;
-      repeat
-        Dos.FindFirst ( Name, $FF, TRec );
-        While (Dos.DosError = 0) and (TRec.Attr and (faVolumeID or faDirectory) <> 0) do
-          Dos.FindNext ( TRec );
-        Error := Dos.DosError;
-        if Error = 18 then Error := 0;
-      until (Error = 0) or (ErrorHandler( Error, acIgnore ) <> acRetry);
-      FileExist := Dos.DosError = 0;
-    end;
-
-  function TFile.Reset : boolean;
-    begin
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          begin
-            Reset := False;
-            Exit;
-          end;
-      ErrorCount := 0;
-      repeat
-        System.Reset ( Handle, 1 );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      OpenFlag := Error = 0;
-      Reset := OpenFlag;
-    end;
-
-  function TFile.Rewrite : boolean;
-    begin
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          begin
-            ReWrite := False;
-            Exit;
-          end;
-      ErrorCount := 0;
-      repeat
-        System.Rewrite ( Handle, 1 );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      OpenFlag := Error = 0;
-      ReWrite := OpenFlag;
-    end;
-
-  function TFile.Close : boolean;
-    begin
-      if NeedFlush and OpenFlag then
-        if Not Flush then
-          begin
-             Close := False;
-             Exit;
-          end;
-      ErrorCount := 0;
-      repeat
-        System.Close ( Handle );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      if Error = 0 then OpenFlag := False;
-      Close := Error <> 0;
-    end;
-
-  function TFile.Truncate : boolean;
-    begin
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          begin
-            Truncate := False;
-            Exit;
-          end;
-      ErrorCount := 0;
-      repeat
-        System.Truncate ( Handle );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      Truncate := Error = 0;
-    end;
-
-  function TFile.Flush : boolean;
-    begin
-      ErrorCount := 0;
-      Error := 0;
-      NeedFlush := False;
-      Flush := True;
-    end;
-
-  function TFile.FileSize : longint;
-    begin
-      ErrorCount := 0;
-      repeat
-        FileSize := System.FileSize ( Handle );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      if Error <> 0 then FileSize := 0;
-    end;
-
-  function TFile.FilePos : longint;
-    begin
-      ErrorCount := 0;
-      repeat
-        FilePos := System.FilePos ( Handle );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      if Error <> 0 then FilePos := 0;
-    end;
-
-  function TFile.Erase : boolean;
-    begin
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          begin
-            Erase := False;
-            Exit;
-          end;
-      ErrorCount := 0;
-      repeat
-        System.Erase ( Handle );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      Erase := Error = 0;
-    end;
-
-  function TFile.Rename ( AFileName : OpenString ) : boolean;
-    begin
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          begin
-            Rename := False;
-            Exit;
-          end;
-      ErrorCount := 0;
-      repeat
-        System.Rename ( Handle, AFileName );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      if Error = 0 then
-        Name := AFIleName;
-      Rename := Error = 0;
-    end;
-
-  function TFile.Seek ( APosition : LongInt ) : boolean;
-    begin
-      ErrorCount := 0;
-      repeat
-        System.Seek ( Handle, APosition );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      Seek := Error = 0;
-    end;
-
-  function TFile.BlockRead (const AAdr; ASize : word; var ACount : word ) : boolean;
-    var
-      TPtr : Pointer;
-    begin
-      TPtr := Addr(AAdr);
-      ErrorCount := 0;
-      repeat
-        System.BlockRead ( Handle, TPtr^, ASize, ACount );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      BlockRead := Error = 0;
-    end;
-
-  function TFile.BlockWrite (const AAdr; ASize : word; var ACount : word ) : boolean;
-    var
-      TPtr : Pointer;
-    begin
-      TPtr := Addr(AAdr);
-      ErrorCount := 0;
-      repeat
-        System.BlockWrite ( Handle, TPtr^, ASize, ACount );
-        Error := System.IOResult;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      BlockWrite := Error = 0;
-    end;
-
-  function TFile.GetFAttr ( var AAttr : word ) : boolean;
-    begin
-      ErrorCount := 0;
-      repeat
-        Dos.GetFAttr ( Handle, AAttr );
-        Error := Dos.DosError;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      GetFAttr := Error = 0;
-    end;
-
-  function TFile.SetFAttr ( AAttr : word ) : boolean;
-    begin
-      ErrorCount := 0;
-      repeat
-        Dos.SetFAttr ( Handle, AAttr );
-        Error := Dos.DosError;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      SetFAttr := Error = 0;
-    end;
-
-  function TFile.GetFTime ( var ATime : LongInt ) : boolean;
-    begin
-      ErrorCount := 0;
-      repeat
-        Dos.SetFTime ( Handle, ATime );
-        Error := Dos.DosError;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      GetFTime := Error = 0;
-    end;
-
-  function TFile.SetFTime ( ATime : LongInt ) : boolean;
-    begin
-      ErrorCount := 0;
-      repeat
-        Dos.SetFTime ( Handle, ATime );
-        Error := Dos.DosError;
-      until (Error = 0) or (ErrorHandler( Error, acAbort ) <> acRetry);
-      SetFTime := Error = 0;
-    end;
-
-  function TFile.GetSearchRec ( var ASearchRec : SearchRec ) : boolean;
-    begin
-      ErrorCount := 0;
-      repeat
-        Dos.FindFirst ( Name, $FF, ASearchRec );
-        Error := Dos.DosError;
-        if Error = 18 then Error := 2;
-      until (Error = 0) or (ErrorHandler( Error, acIgnore ) <> acRetry);
-      GetSearchRec := Dos.DosError = 0;
-    end;
-
-  (* Functions that should rarely need modification. *)
-
-  function TFile.Open : boolean;
-    begin
-      if FileExist then
-        Open := Reset
+      AResult := 0;
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
       else
-      if Error = 0 then
-        Open := ReWrite
+      if (Flags and flOpened <> flOpened ) then
+        SetIOResult(erFile_not_open)
       else
-        Open := False;
+      if (Flags and flRead <> flRead) then
+        SetIOResult(erFile_not_open_for_input)
+      else
+        SetIOResult ( erNone );
     end;
 
-  function TFile.Create : boolean;
+  procedure TFile.BlockWrite(const ABuf; ACount: Word; var AResult: Word);
     begin
-      if FileExist then
+      AResult := 0;
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+      if (Flags and flOpened <> flOpened) then
+        SetIOResult(erFile_not_open)
+      else
+      if (Flags and flWrite <> flWrite) then
+        SetIOResult(erFile_not_open_for_output)
+      else
+        SetIOResult ( erNone );
+    end;
+
+  procedure TFile.Close;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+      if (Flags and flOpened <> flOpened) then
+        SetIOResult(erFile_not_open)
+      else
         begin
-          ErrorCount := 0;
-          repeat
-            Error := 5; { file access denied }
-          until (ErrorHandler ( Error, acAbort ) <> acRetry);
-          Create := False;
-        end
-      else
-      if Error = 0 then
-        Create := ReWrite
-      else
-        Create := False;
-    end;
-
-  function TFile.EOF : boolean;
-    var
-      TSize : LongInt;
-    begin
-      TSize := FileSize;
-      if Error <> 0 then
-        EOF := False
-      else
-        EOF := (TSize = FilePos) and (Error = 0);
-    end;
-
-  function TFile.SeekEOF : boolean;
-    var
-      TSize : longInt;
-    begin
-      TSize := FileSize;
-      if Error <> 0 then
-        SeekEOF := False
-      else
-        SeekEOF := Seek(TSize);
-    end;
-
-  function TFIle.ReadRecord (const AAdr; ASize : word) : boolean;
-    var
-      TCount : word;
-    begin
-      BlockRead ( AAdr, ASize, TCount );
-      if (Error = 0) and (ASize <> TCount) then
-        begin
-          ErrorCount := 0;
-          repeat
-            Error := 100; { Disk Read Error }
-          until (ErrorHandler ( Error, acAbort ) <> acRetry);
+          SetIOResult ( erNone );
+          if Flags and flFlush = flFlush then Flush;
         end;
-      ReadRecord := Error = 0;
     end;
 
-  (* Records *)
-
-  function TFile.WriteRecord (const AAdr; ASize : word) : boolean;
-    var
-      TCount : word;
+  procedure TFile.Erase;
     begin
-      BlockWrite ( AAdr, ASize, TCount );
-      if (Error = 0) and (ASize <> TCount) then
-        begin
-          ErrorCount := 0;
-          repeat
-            Error := 101; { Disk Write Error }
-          until (ErrorHandler ( Error, acAbort ) <> acRetry);
-        end;
-      WriteRecord := Error = 0;
-    end;
-
-  (* Boolean *)
-
-  function TFile.ReadBoolean (const ABoolean) : boolean;
-    begin
-      ReadBoolean := ReadRecord ( ABoolean, SizeOf(Boolean) );
-    end;
-
-  function TFile.WriteBoolean (const ABoolean) : boolean;
-    begin
-      WriteBoolean := WriteRecord( ABoolean, SizeOf(Boolean) );
-    end;
-
-  function TFile.ReadByteBool (const AByteBool) : boolean;
-    begin
-      ReadByteBool := ReadRecord ( AByteBool, SizeOf(ByteBool) );
-    end;
-
-  function TFile.WriteByteBool (const AByteBool) : boolean;
-    begin
-      WriteByteBool := WriteRecord( AByteBool, SizeOf(ByteBool) );
-    end;
-
-  function TFile.ReadWordBool (const AWordBool) : boolean;
-    begin
-      ReadWordBool := ReadRecord ( AWordBool, SizeOf(WordBool) );
-    end;
-
-  function TFile.WriteWordBool (const AWordBool) : boolean;
-    begin
-      WriteWordBool := WriteRecord( AWordBool, SizeOf(WordBool) );
-    end;
-
-  function TFile.ReadLongBool (const ALongBool) : boolean;
-    begin
-      ReadLongBool := ReadRecord ( ALongBool, SizeOf(LongBool) );
-    end;
-
-  function TFile.WriteLongBool (const ALongBool) : boolean;
-    begin
-      WriteLongBool := WriteRecord( ALongBool, SizeOf(LongBool) );
-    end;
-
-  (* Integer *)
-
-  function TFile.ReadByte (const AByte) : boolean;
-    begin
-      ReadByte := ReadRecord ( AByte, SizeOf(Byte) );
-    end;
-
-  function TFile.WriteByte (const AByte) : boolean;
-    begin
-      WriteByte := WriteRecord( AByte, SizeOf(Byte) );
-    end;
-
-  function TFile.ReadWord (const AWord) : boolean;
-    begin
-      ReadWord := ReadRecord ( AWord, SizeOf(Word) );
-    end;
-
-  function TFile.WriteWord (const AWord) : boolean;
-    begin
-      WriteWord := WriteRecord( AWord, SizeOf(Word) );
-    end;
-
-  function TFile.ReadShortInt (const AShortInt) : boolean;
-    begin
-      ReadShortInt := ReadRecord ( AShortInt, SizeOf(ShortInt) );
-    end;
-
-  function TFile.WriteShortInt (const AShortInt) : boolean;
-    begin
-      WriteShortInt := WriteRecord( AShortInt, SizeOf(ShortInt) );
-    end;
-
-  function TFile.ReadInteger (const AInteger) : boolean;
-    begin
-      ReadInteger := ReadRecord ( AInteger, SizeOf(Integer) );
-    end;
-
-  function TFile.WriteInteger (const AInteger) : boolean;
-    begin
-      WriteInteger := WriteRecord( AInteger, SizeOf(Integer) );
-    end;
-
-  function TFile.ReadLongInt (const ALongInt) : boolean;
-    begin
-      ReadLongInt := ReadRecord ( ALongInt, SizeOf(LongInt) );
-    end;
-
-  function TFile.WriteLongInt (const ALongInt) : boolean;
-    begin
-      WriteLongInt := WriteRecord( ALongInt, SizeOf(LongInt) );
-    end;
-
-  (* Real *)
-
-  function TFile.ReadSingle (const ASingle) : boolean;
-    begin
-      ReadSingle := ReadRecord ( ASingle, SizeOf(Single) );
-    end;
-
-  function TFile.WriteSingle (const ASingle) : boolean;
-    begin
-      WriteSingle := WriteRecord( ASingle, SizeOf(Single) );
-    end;
-
-  function TFile.ReadReal (const AReal) : boolean;
-    begin
-      ReadReal := ReadRecord ( AReal, SizeOf(Real) );
-    end;
-
-  function TFile.WriteReal (const AReal) : boolean;
-    begin
-      WriteReal := WriteRecord( AReal, SizeOf(Real) );
-    end;
-
-  function TFile.ReadDouble (const ADouble) : boolean;
-    begin
-      ReadDouble := ReadRecord ( ADouble, SizeOf(Double) );
-    end;
-
-  function TFile.WriteDouble (const ADouble) : boolean;
-    begin
-      WriteDouble := WriteRecord( ADouble, SizeOf(Double) );
-    end;
-
-  function TFile.ReadComp (const AComp) : boolean;
-    begin
-      ReadComp := ReadRecord ( AComp, SizeOf(Comp) );
-    end;
-
-  function TFile.WriteComp (const AComp) : boolean;
-    begin
-      WriteComp := WriteRecord( AComp, SizeOf(Comp) );
-    end;
-
-  function TFile.ReadExtended (const AExtended) : boolean;
-    begin
-      ReadExtended := ReadRecord ( AExtended, SizeOf(Extended) );
-    end;
-
-  function TFile.WriteExtended (const AExtended) : boolean;
-    begin
-      WriteExtended := WriteRecord( AExtended, SizeOf(Extended) );
-    end;
-
-  (* Character *)
-
-  function TFile.ReadChar (const AChar) : boolean;
-    begin
-      ReadChar := ReadRecord ( AChar, SizeOf(Char) );
-    end;
-
-  function TFile.WriteChar (const AChar) : boolean;
-    begin
-      WriteChar := WriteRecord( AChar, SizeOf(Char) );
-    end;
-
-  (* String *)
-
-  function TFile.ReadString (const AString; AStrSize : word) : boolean;
-    var
-      TString : String;
-      TPtr    : Pointer;
-    begin
-      TPtr := Addr(AString);
-      if ReadByte(TString) then
-        ReadString := ReadRecord (TString[1], Byte(TString[0]))
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
       else
-        ReadString := False;
-      Move ( TString, TPtr^, AStrSize );
+      if (Flags and flOpened = flOpened) then
+        SetIOResult(erFile_access_denied)
+      else
+        SetIOResult ( erNone );
     end;
 
-  function TFile.WriteString (const AString; AStrSize : word) : boolean;
+  function TFile.FilePos: Longint;
     begin
-      WriteString := ReadRecord (AString, AStrSize);
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+      if (Flags and flOpened <> flOpened) then
+        SetIOResult(erFile_not_open)
+      else
+        begin
+          SetIOResult( erNone );
+          FilePos := Ptr;
+        end;
+    end;
+
+  function TFile.FileSize: Longint;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+      if (Flags and flOpened <> flOpened) then
+        SetIOResult(erFile_not_open)
+      else
+        begin
+          SetIOResult ( erNone );
+          FileSize := 0;
+        end;
+    end;
+
+  procedure TFile.Flush;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+      if (Flags and flOpened <> flOpened) then
+        SetIOResult(erFile_not_open)
+      else
+      if (Flags and flWrite <> flWrite) then
+        SetIOResult(erFile_not_open_for_output)
+      else
+        SetIOResult ( erNone );
+    end;
+
+  function TFile.IOResult: Integer;
+    begin
+      IOResult := Result;
+      SetIOResult(erNone);
+    end;
+
+  function TFile.SetIOResult ( AIOResult : integer ) : byte;
+    begin
+      if AIOResult <> erNone then
+        Flags := Flags or flError
+      else
+        Flags := Flags and (not flError);
+      Result := AIOResult;
+      case AIOResult of
+        erNone : SetIOResult := fcOK;
+      else
+        SetIOResult := fcAbort;
+        {$IFOPT I+}
+        RunError(AIOResult);
+        {$ENDIF}
+      end;
+    end;
+
+  procedure TFile.Rename;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+        SetIOResult ( erNone );
+    end;
+
+  procedure TFile.Reset;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+        begin
+          SetIOResult ( erNone );
+          if (Flags and flOpened = flOpened) then
+            Close;
+          if (Flags and flError <> flError) then
+            SetFileMode ( FileMode );
+        end;
+    end;
+
+  procedure TFile.Rewrite;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+        begin
+          SetIOResult ( erNone );
+          if (Flags and flOpened = flOpened) then
+            Close;
+          if (Flags and flError <> flError) then
+            SetFileMode ( (FileMode and (not 3)) or 2 );
+        end;
+    end;
+
+  procedure TFile.Seek(AFilePos: Longint);
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+      if (Flags and flOpened <> flOpened) then
+        SetIOResult(erFile_not_open)
+      else
+        SetIOResult ( erNone );
+    end;
+
+  procedure TFile.Truncate;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+      if (Flags and flOpened <> flOpened) then
+        SetIOResult(erFile_not_open)
+      else
+        SetIOResult ( erNone );
+    end;
+
+  procedure TFile.Append;
+    begin
+      if (Flags and flAssigned <> flAssigned) then
+        SetIOResult(erFile_not_assigned)
+      else
+        begin
+          SetIOResult ( erNone );
+          if (Flags and flOpened = flOpened) then
+            Close;
+          if (Flags and flError <> flError) then
+            SetFileMode ( (FileMode and (not 3)) or 1 );
+        end;
+    end;
+
+  procedure TFile.Copy(var AFile : PFile; ACount: LongInt);
+    var
+      RCount, WCount : word;
+    begin
+      repeat
+        BlockRead(Buf, Sizeof(Buf), RCount);
+        if (Flags and flError <> flError) then
+          AFile^.BlockWrite(Buf, RCount, WCount);
+      until Eof or (Flags and flError = flError) or
+        (AFile^.Flags and flError = flError) or (RCount <> Sizeof(Buf)) or
+        (RCount <> WCount);
+    end;
+
+  function TFile.Sof: Boolean;
+    begin
+      Sof := (Ptr = 0 );
+    end;
+
+  function TFile.Eof: Boolean;
+    begin
+      Eof := (FileSize <= Ptr );
+    end;
+
+  function TFile.SeekSof: Boolean;
+    begin
+      Seek( 0 );
+      SeekSof := Flags and flError <> flError;
+    end;
+
+  function TFile.SeekEof: Boolean;
+    var
+      Size : LongInt;
+    begin
+      Size := FileSize;
+      if (Flags and flError <> flError) then
+        Seek( Size );
+      SeekEof := Flags and flError <> flError;
+    end;
+
+  procedure TFile.SetFileMode ( AMode : word );
+    begin
+      Mode := AMode;
+      Flags := Flags and (Not flRandom);
+      case Mode and 2 of
+        0 : Flags := Flags or flRead;
+        1 : Flags := Flags or flWrite;
+        2 : Flags := Flags or flRandom;
+      end;
+    end;
+
+  procedure TFile.Insert(ACount : longint);
+    var
+      Size,
+      Count  : word;
+      OldPtr : LongInt;
+      CurPtr : LongInt;
+    begin
+      OldPtr := FilePos;
+      if (Flags and flError = flError) or (ACount < 1) then Exit;
+      CurPtr := FileSize;
+      if (Flags and flError <> flError) then
+        repeat
+          Size := Sizeof(Buf);
+          if CurPtr - Size < OldPtr then
+            Size := CurPtr - OldPtr;
+          Dec(CurPtr, Size);
+          Seek(CurPtr);
+          if (Flags and flError <> flError) then BlockRead(Buf, Size, Count);
+          if (Flags and flError <> flError) then Seek(CurPtr + ACount);
+          if (Flags and flError <> flError) then BlockWrite(Buf, Size, Count);
+        until (CurPtr = OldPtr) or (Flags and flError = flError);
+      if (Flags and flError <> flError) then Seek(OldPtr);
+    end;
+
+  procedure TFIle.Delete(ACount : longint);
+    var
+      Size,
+      Count  : word;
+      OldPtr : LongInt;
+      CurPtr : LongInt;
+      FSize  : LongInt;
+    begin
+      OldPtr := FilePos;
+      if (Flags and flError = flError) or (ACount < 1) then Exit;
+      FSize := FileSize;
+      CurPtr := OldPtr + ACount;
+      if (Flags and flError <> flError) then
+        repeat
+          Size := Sizeof(Buf);
+          if CurPtr + Size > FSize then
+            Size := FSize - CurPtr;
+          Seek(CurPtr);
+          if (Flags and flError <> flError) then BlockRead(Buf, Size, Count);
+          if (Flags and flError <> flError) then Seek(CurPtr - ACount);
+          if (Flags and flError <> flError) then BlockWrite(Buf, Size, Count);
+          Inc(CurPtr, Size);
+        until (CurPtr >= FSize) or (Flags and flError = flError);
+      if (Flags and flError <> flError) then Truncate;
+      if (Flags and flError <> flError) then Seek(OldPtr);
+    end;
+
+  procedure TFile.ReadRecord (const AAdr; ASize : word);
+    var
+      Count : word;
+    begin
+      BlockRead ( AAdr, ASize, Count );
+      if (Flags and flError <> flError) and (Count <> ASize) then
+        SetIOResult(erDevice_Read_Fault);
+    end;
+
+  procedure TFile.WriteRecord (const AAdr; ASize : word);
+    var
+      Count : word;
+    begin
+      BlockWrite ( AAdr, ASize, Count );
+      if (Flags and flError <> flError) and (Count <> ASize) then
+        SetIOResult(erDevice_Write_Fault);
+    end;
+
+  procedure TFile.ReadChar ( const AChr );
+    begin
+      ReadRecord(AChr, Sizeof(Char));
+    end;
+
+  procedure TFile.WriteChar ( const AChr );
+    begin
+      WriteRecord(AChr, Sizeof(Char));
+    end;
+
+  procedure TFile.ReadBoolean   (const ABoolean);
+    begin
+      ReadRecord(ABoolean, Sizeof(Boolean));
+    end;
+
+  procedure TFile.WriteBoolean  (const ABoolean);
+    begin
+      WriteRecord(ABoolean, Sizeof(Boolean));
+    end;
+
+  procedure TFile.ReadByteBool  (const AByteBool);
+    begin
+      ReadRecord(AByteBool, Sizeof(ByteBool));
+    end;
+
+  procedure TFile.WriteByteBool (const AByteBool);
+    begin
+      WriteRecord(AByteBool, Sizeof(ByteBool));
+    end;
+
+  procedure TFile.ReadWordBool  (const AWordBool);
+    begin
+      ReadRecord(AWordBool, Sizeof(WordBool));
+    end;
+
+  procedure TFile.WriteWordBool (const AWordBool);
+    begin
+      WriteRecord(AWordBool, Sizeof(WordBool));
+    end;
+
+  procedure TFile.ReadLongBool  (const ALongBool);
+    begin
+      ReadRecord(ALongBool, Sizeof(LongBool));
+    end;
+
+  procedure TFile.WriteLongBool (const ALongBool);
+    begin
+      WriteRecord(ALongBool, Sizeof(LongBool));
+    end;
+
+  procedure TFile.ReadByte      (const AByte);
+    begin
+      ReadRecord(AByte, Sizeof(Byte));
+    end;
+
+  procedure TFile.WriteByte     (const AByte);
+    begin
+      WriteRecord(AByte, Sizeof(Byte));
+    end;
+
+  procedure TFile.ReadWord      (const AWord);
+    begin
+      ReadRecord(AWord, Sizeof(Word));
+    end;
+
+  procedure TFile.WriteWord     (const AWord);
+    begin
+      WriteRecord(AWord, Sizeof(Word));
+    end;
+
+  procedure TFile.ReadShortInt  (const AShortInt);
+    begin
+      ReadRecord(AShortInt, Sizeof(ShortInt));
+    end;
+
+  procedure TFile.WriteShortInt (const AShortInt);
+    begin
+      WriteRecord(AShortInt, Sizeof(ShortInt));
+    end;
+
+  procedure TFile.ReadInteger   (const AInteger);
+    begin
+      ReadRecord(AInteger, Sizeof(Integer));
+    end;
+
+  procedure TFile.WriteInteger  (const AInteger);
+    begin
+      WriteRecord(AInteger, Sizeof(Integer));
+    end;
+
+  procedure TFile.ReadLongInt   (const ALongInt);
+    begin
+      ReadRecord(ALongInt, Sizeof(LongInt));
+    end;
+
+  procedure TFile.WriteLongInt  (const ALongInt);
+    begin
+      WriteRecord(ALongInt, Sizeof(LongInt));
+    end;
+
+  procedure TFile.ReadReal      (const AReal);
+    begin
+      ReadRecord(AReal, Sizeof(Real));
+    end;
+
+  procedure TFile.WriteReal     (const AReal);
+    begin
+      WriteRecord(AReal, Sizeof(Real));
+    end;
+
+  procedure TFile.ReadSingle    (const ASingle);
+    begin
+      ReadRecord(ASingle, Sizeof(Single));
+    end;
+
+  procedure TFile.WriteSingle   (const ASingle);
+    begin
+      WriteRecord(ASingle, Sizeof(Single));
+    end;
+
+  procedure TFile.ReadDouble    (const ADouble);
+    begin
+      ReadRecord(ADouble, Sizeof(Double));
+    end;
+
+  procedure TFile.WriteDouble   (const ADouble);
+    begin
+      WriteRecord(ADouble, Sizeof(Double));
+    end;
+
+  procedure TFile.ReadComp      (const AComp);
+    begin
+      ReadRecord(AComp, Sizeof(Comp));
+    end;
+
+  procedure TFile.WriteComp     (const AComp);
+    begin
+      WriteRecord(AComp, Sizeof(Comp));
+    end;
+
+  procedure TFile.ReadExtended  (const AExtended);
+    begin
+      ReadRecord(AExtended, Sizeof(Extended));
+    end;
+
+  procedure TFile.WriteExtended (const AExtended);
+    begin
+      WriteRecord(AExtended, Sizeof(Extended));
+    end;
+
+  procedure TFile.ReadString  (const AString; AStrSize : word);
+    begin
+      ReadRecord(AString, Sizeof(String));
+    end;
+
+  procedure TFile.WriteString (const AString; AStrSize : word);
+    begin
+      WriteRecord(AString, Sizeof(String));
     end;
 
   function TFile.GetString : String;
     var
-      TString : String;
+      Str : String;
     begin
-      if ReadByte(TString) then
-        begin
-          ReadRecord (TString[1], Byte(TString[0]));
-          GetString := TString;
-        end
+      ReadByte(Str[0]);
+      if (Flags and flError <> flError) then
+        ReadRecord(Str[1], Byte(Str[0]));
+      if (Flags and flError <> flError) then
+        GetString := Str
       else
         GetString := '';
     end;
 
-  function TFile.PutString (const AString) : boolean;
+  procedure TFile.PutString (const AString);
     begin
-      PutString := WriteRecord ( AString, Byte(AString) + 1 );
+      WriteRecord(AString, Length(String(AString)) + 1);
     end;
 
-(* BufFile ---------------------------------------------------------------- *)
+  { Text files }
+  function TFile.Soln: Boolean;
+    var
+      Test  : word;
+      Count : word;
+      P     : LongInt;
+    begin
+      Soln := False;
+      P := FilePos;
+      if (Flags and flError = flError) then Exit;
+      case P of
+        1 : Exit;
+        0 : Soln := True;
+      else
+        Seek(P - 2);
+        if (Flags and flError <> flError) then
+          BlockRead ( Test, Sizeof(Test), Count );
+        Soln := (Count = 2) and (Test = $0A0D) and
+        (Flags and flError <> flError);
+      end;
+    end;
 
-  constructor TBufFile.Init ( ABufSize : word );
+  function TFile.EoLn: Boolean;
+    var
+      Test  : word;
+      Count : word;
+      P     : LongInt;
+    begin
+      EoLn := False;
+      P := FilePos;
+      if (Flags and flError = flError) then Exit;
+      BlockRead ( Test, Sizeof(Test), Count );
+      Eoln := (Count = 2) and (Test = $0A0D) and
+        (Flags and flError <> flError);
+      Seek(P);
+    end;
+
+  function TFIle.SeekSoln: Boolean;
+    var
+      SLn : boolean;
+    begin
+      SetIOResult ( erNone );
+      repeat
+        SLn := Soln;
+        if (Flags and flError <> flError) and (Not SLn) then
+          Seek(Ptr - 1);
+      until SLn or (Flags and flError = flError);
+      SeekSoln := Soln;
+    end;
+
+  function TFIle.SeekEoln: Boolean;
+    var
+      EndLn, EndF : boolean;
+    begin
+      SetIOResult ( erNone );
+      repeat
+        EndLn := Eoln;
+        if (Flags and flError <> flError) then EndF  := Eof;
+        if (Flags and flError <> flError) and (Not EndLn) and (Not EndF) then
+          Seek(Ptr + 1);
+      until EndLn or EndF or (Flags and flError = flError);
+      SeekEoln := Eoln;
+    end;
+
+  procedure TFile.Read ( const AStr; AMax : word );
+    var
+      P : ^String;
+      I : word;
+      C : Char;
+    begin
+      P := @AStr;
+      I := 0;
+      P^[0] := #0;
+      while (Not EOF) and (Not Eoln) and (Flags and flError <> flError) and (I < AMax) do
+        begin
+          ReadRecord(C, Sizeof(C));
+          if (Flags and flError <> flError) then
+            begin
+              Inc(I);
+              if I <= 255 then
+                begin
+                  P^[0] := Char(I);
+                  P^[I] := C;
+                end;
+            end;
+        end;
+    end;
+
+  procedure TFile.Write ( const AStr );
+    begin
+      WriteRecord(String(AStr)[1], Length(String(AStr)));
+    end;
+
+  procedure TFile.ReadLn ( const AStr; AMax : word );
+    var
+      P : ^String;
+      I : word;
+      C : Char;
+    begin
+      P := @AStr;
+      I := 0;
+      P^[0] := #0;
+      while (Not EOF) and (Not Eoln) and (Flags and flError <> flError) do
+        begin
+          ReadRecord(C, Sizeof(C));
+          if (Flags and flError <> flError) and (I < AMax) then
+            begin
+              Inc(I);
+              if I <= 255 then
+                begin
+                  P^[0] := Char(I);
+                  P^[I] := C;
+                end;
+            end;
+        end;
+      if (Flags and flError <> flError) and (Not EOF) then ReadRecord ( I, Sizeof(I) );
+    end;
+
+  procedure TFile.WriteLn ( const AStr );
+    const
+      CRLF : word = $0A0D;
+    begin
+      WriteRecord(String(AStr)[1], Length(String(AStr)));
+      if Flags and flError <> flError then WriteWord ( CRLF );
+    end;
+
+  function TFile.LengthLn : word;
+    var
+      OPtr : longInt;
+      SPtr : longInt;
+      EPtr : longInt;
+    begin
+      LengthLn := 0;
+      OPtr := FilePos;
+      if (Flags and flError <> flError) then SeekSoln;
+      if (Flags and flError <> flError) then SPtr := FilePos;
+      if (Flags and flError <> flError) then SeekEoln;
+      if (Flags and flError <> flError) then EPtr := FilePos;
+      if (Flags and flError <> flError) then Seek(OPtr);
+      if (Flags and flError <> flError) then LengthLn := EPtr - SPtr;
+    end;
+
+  procedure TFile.InsertLn ( ALen : word );
+    var
+      OPtr : longInt;
+    begin
+      SeekSoln;
+      if (Flags and flError <> flError) then OPtr := FilePos;
+      if (Flags and flError <> flError) then Insert(ALen + 2);
+      if (Flags and flError <> flError) then Seek(OPtr + ALen);
+      if (Flags and flError <> flError) then Write(CRLF);
+      if (Flags and flError <> flError) then Seek(OPtr);
+    end;
+
+  procedure TFile.DeleteLn;
+    var
+      OLen : word;
+      OPtr : LongInt;
+    begin
+      SeekSoln;
+      if (Flags and flError <> flError) then OPtr := FilePos;
+      if (Flags and flError <> flError) then OLen := LengthLn;
+      if (Flags and flError <> flError) then Delete(OLen + 2);
+      if (Flags and flError <> flError) then Seek(OPtr);
+    end;
+
+  procedure TFile.ResizeLn ( ALen : word );
+    var
+      OLen : word;
+      OPtr : LongInt;
+    begin
+      OLen := LengthLn;
+      if (Flags and flError <> flError) then
+        begin
+          if OLen < ALen then
+            begin
+              SeekSoln;
+              if (Flags and flError <> flError) then OPtr := FilePos;
+              if (Flags and flError <> flError) then Seek(OPtr + OLen);
+              if (Flags and flError <> flError) then Insert(ALen - OLen);
+              if (Flags and flError <> flError) then SeekSoln;
+            end
+          else
+          if OLen > ALen then
+            begin
+              SeekSoln;
+              if (Flags and flError <> flError) then OPtr := FilePos;
+              if (Flags and flError <> flError) then Seek(OPtr + ALen);
+              if (Flags and flError <> flError) then Delete(OLen - ALen);
+              if (Flags and flError <> flError) then Seek(OPtr);
+            end
+          else
+            SeekSoln;
+        end;
+    end;
+
+  function TFile.SeekLn ( ANumber : LongInt ) : boolean;
+    var
+      I : LongInt;
+      S : String[1];
+    begin
+      SeekSof;
+      for I := 1 to ANumber - 1 do
+        if (Flags and flError <> flError) then
+          ReadLn ( S, 0 );
+      SeekLn := (Flags and flError <> flError);
+    end;
+{ *** TDosFile *** }
+  constructor TDosFile.Init;
     begin
       inherited Init;
-      BufSize := (ABufSize div 512) * 512;
-      if (BufSize = 0) and (ABufSize > 0) then BufSize := ABufSize;
-      if (MaxAvail < BufSize) and (MaxAvail > 1024) then
-        BufSize := (MaxAvail div 1024) * 1024 - 1024
-      else
-      if MaxAvail <= 1024 then
-        BufSize := 0;
-      if BufSize > 0 then
-        GetMem( BufPtr, BufSize )
-      else
-        BufPtr := nil;
     end;
 
-  destructor TBufFile.Done;
+  destructor  TDosFile.Done;
     begin
-      if OpenFlag and NeedFlush then Flush;
-      if Assigned(BufPtr) then
-        begin
-          FreeMem ( BufPtr, BufSize );
-          BufPtr := nil;
-        end;
       inherited Done;
     end;
 
-  function TBufFile.GetBufSize : word;
-    begin
-      if Assigned(BufPtr) then
-        GetBufSize := BufSize
-      else
-        GetBufSize := 0;
-    end;
-
-  function TBufFile.Reset : boolean;
-    begin
-      Reset := False;
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          Exit;
-      if not inherited Reset then
-        Exit;
-      FPos := inherited FilePos;
-      if Error = 0 then
-      FLen := inherited FileSize;
-      if Error <> 0 then
-        begin
-          DumbClose;
-          Exit;
-        end;
-      BPos := FPos;
-      BLen := 0;
-      if inherited BlockRead ( BufPtr^, BufSize, BLen ) then
-        Reset := True
-      else
-        DumbClose
-    end;
-
-  function TBufFile.ReWrite : boolean;
-    begin
-      ReWrite := False;
-      if not inherited ReWrite then
-        Exit;
-      FPos := inherited FilePos;
-      if Error = 0 then
-      FLen := inherited FileSize;
-      if Error <> 0 then
-        begin
-          DumbClose;
-          Exit;
-        end;
-      BPos := FPos;
-      BLen := 0;
-    end;
-
-  function TBufFile.Truncate : boolean;
-    begin
-      Truncate := False;
-      if Not inherited Seek ( FPos ) then Exit;
-      if Not inherited Truncate then Exit;
-      FLen := FPos;
-      if FPos <= BPos then
-        BLen := 0
-      else
-      if BPos + LongInt(BLen) > FPos then
-        BLen := FPos - BPos;
-      Truncate := True;
-    end;
-
-  function TBufFile.Flush : boolean;
+  procedure TDosFile.Assign( AFileName : String );
     var
-      TLen : word;
+      Action : byte;
     begin
-      if OpenFlag and NeedFlush and Assigned(BufPtr) then
+      inherited Assign(AFileName);
+      if (Flags and flError <> flError) then
         begin
-          if BLen > 0 then
-            begin
-              if not inherited Seek ( BPos ) then
-                begin
-                  Flush := False;
-                  Exit;
-                end;
-              if (Not inherited BlockWrite ( BufPtr^, BLen, TLen )) or
-               (TLen <> BLen) then
-                begin
-                  ErrorCount := 0;
-                  repeat
-                    Error := 101; { Disk Write Error }
-                  until (ErrorHandler ( Error, acAbort ) <> acRetry);
-                  Flush := False;
-                  Exit;
-                end;
-            end;
-          if not inherited Seek ( FPos ) then Exit;
-          Flush := Inherited Flush;
-        end
-      else
-        begin
-          ErrorCount := 0;
-          Error := 0;
-          Flush := True;
+          repeat
+            System.Assign(FRec, AFileName);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then
+            Flags := Flags or flAssigned;
         end;
     end;
 
-  function TBufFile.FileSize : longint;
-    begin
-      ErrorCount := 0;
-      Error := 0;
-      FileSize := FLen;
-    end;
-
-  function TBufFile.FilePos : longint;
-    begin
-      ErrorCount := 0;
-      Error := 0;
-      FilePos := FPos;
-    end;
-
-  function TBufFile.Seek ( APosition : LongInt ) : boolean;
-    begin
-      ErrorCount := 0;
-      Error := 0;
-      FPos := APosition;
-    end;
-
-  function TBufFile.BlockRead (const AAdr; ASize : word; var ACount : word ) : boolean;
-    type
-      ByteCast = array[0..$FFFE] of byte;
+  procedure TDosFile.BlockRead(const ABuf; ACount: Word; var AResult: Word);
     var
-      TPtr : Pointer;
+      P : Pointer;
+      Action : byte;
     begin
-      if (ASize > BufSize) or (Not Assigned(BufPtr)) then
+      inherited BlockRead(ABuf, ACount, AResult);
+      if (Flags and flError <> flError) then
         begin
-          if (Not Flush) or (Not inherited Seek(FPos)) then
-            begin
-              BlockRead := False;
-              Exit;
-            end;
-          BlockRead := inherited BlockRead ( AAdr, ASize, ACount );
-          Inc( FPos, ACount );
-        end
-      else
-        begin
-          TPtr := Addr(AAdr);
-          if (FPos < BPos) or (BLen = 0) or ((FPos + LongInt(ASize) > BPos + LongInt(BLen)) and
-          (FPos + LongInt(ASize) > BPos + LongInt(BufSize))) then
-            if Not RelocateBuf( ASize ) then
-              begin
-                BlockRead := False;
-                Exit;
-              end;
-          if ASize > BLen then
-            ACount := BLen
-          else
-            ACount := ASize;
-          Move ( ByteCast(BufPtr^)[FPos - BPos], TPtr^, ACount );
-          Inc ( FPos, ACount );
-          BlockRead := True;
+          repeat
+            P := @ABuf;
+            System.BlockRead(FRec, P^, ACount, AResult);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then Inc(Ptr, AResult)
         end;
     end;
 
-  function TBufFile.BlockWrite (const AAdr; ASize : word; var ACount : word ) : boolean;
-    type
-      ByteCast = array[0..$FFFE] of byte;
+  procedure TDosFile.BlockWrite(const ABuf; ACount: Word; var AResult: Word);
     var
-      TPtr : Pointer;
+      P : Pointer;
+      Action : byte;
     begin
-      if (ASize > BufSize) or (Not Assigned(BufPtr)) then
+      inherited BlockWrite(ABuf, ACount, AResult);
+      if (Flags and flError <> flError) then
         begin
-          if (Not Flush) or (Not inherited Seek(FPos)) then
-            begin
-              BlockWrite := False;
-              Exit;
-            end;
-          BlockWrite := inherited BlockWrite ( AAdr, ASize, ACount );
-          Inc ( FPos, ACount );
-          if FPos + LongInt(ACount) > FLen then
-            FLen := FPos + LongInt(ACount) - 1;
-        end
-      else
-        begin
-          TPtr := Addr(AAdr);
-          if (FPos < BPos) or (BLen = 0) or ((FPos + LongInt(ASize) > BPos + LongInt(BLen)) and
-          (FPos + LongInt(ASize) > BPos + LongInt(BufSize))) then
-            if Not RelocateBuf( ASize ) then
-              begin
-                BlockWrite := False;
-                Exit;
-              end;
-          ACount := ASize;
-          if FPos + LongInt(ASize) > BPos + LongInt(BLen) then
-            begin
-              FLen := FPos + LongInt(ASize);
-              BLen := FLen - BPos;
-            end;
-          Move ( TPtr^, ByteCast(BufPtr^)[FPos - BPos], ACount );
-          Inc ( FPos, ACount );
-          NeedFlush := True;
-          BlockWrite := True;
+          repeat
+            P := @ABuf;
+            System.BlockWrite(FRec, P^, ACount, AResult);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then Inc(Ptr, AResult);
         end;
     end;
 
-  procedure TBufFile.DumbClose;
+
+  procedure TDosFile.Close;
     var
-      TError : integer;
+      Action : byte;
     begin
-      System.Close ( Handle );
-      TError := System.IOResult;
-      OpenFlag := False;
-      NeedFlush := False;
-    end;
-
-  function TBufFile.RelocateBuf ( ASize : word ) : boolean;
-    begin
-      if OpenFlag and NeedFlush then
-        if Not Flush then
-          begin
-            RelocateBuf := False;
-            Exit;
-          end;
-      BPos := FPos;
-      if (not inherited Seek(BPos)) or
-      (not inherited BlockRead( BufPtr^, BufSize, BLen )) then
+      inherited Close;
+      if (Flags and flError <> flError) then
         begin
-          RelocateBuf := False;
-          BLen := 0;
-          Exit;
+          repeat
+            System.Close(FRec);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then
+            Flags := Flags and (Not flOpened);
+          if (Action <> fcAbort) then Ptr := 0;
         end;
-      RelocateBuf := True;
     end;
 
-end.
+  procedure TDosFile.Erase;
+    var
+      Action : byte;
+    begin
+      inherited Erase;
+      if (Flags and flError <> flError) then
+        begin
+          repeat
+            System.Erase(FRec);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+        end;
+    end;
+
+  function TDosFile.FileSize: Longint;
+    var
+      Action : byte;
+    begin
+      inherited FileSize;
+      if (Flags and flError <> flError) then
+        begin
+          repeat
+            FileSize := System.FileSize(FRec);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+        end;
+    end;
+
+  procedure TDosFile.Flush;
+    begin
+      inherited Flush;
+      if (Flags and flError <> flError) then
+        begin
+          Flags := Flags and (Not flFlush);
+        end;
+    end;
+
+
+  procedure TDosFile.Rename( ANewName : String );
+    var
+      Action : byte;
+    begin
+      inherited Rename(ANewName);
+      if (Flags and flError <> flError) then
+        begin
+          repeat
+            System.Rename(FRec, ANewName);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then
+            Name := ANewName;
+        end;
+    end;
+
+  procedure TDosFile.Reset;
+    var
+      Action : byte;
+    begin
+      inherited Reset;
+      if (Flags and flError <> flError) then
+        begin
+          repeat
+            System.Reset(FRec, 1);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then
+            Flags := Flags or flOpened;
+          if (Action <> fcAbort) then Ptr := 0;
+        end;
+    end;
+
+  procedure TDosFile.Rewrite;
+    var
+      Action : byte;
+    begin
+      inherited Rewrite;
+      if (Flags and flError <> flError) then
+        begin
+          repeat
+            System.Rewrite(FRec, 1);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then
+            Flags := Flags or flOpened;
+          if (Action <> fcAbort) then Ptr := 0;
+        end;
+    end;
+
+  procedure TDosFile.Seek(AFilePos: Longint);
+    var
+      Action : byte;
+    begin
+      inherited Seek(AFilePos);
+      if (Flags and flError <> flError) then
+        begin
+          repeat
+            System.Seek(FRec, AFilePos);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then
+            Flags := Flags or flOpened;
+          if (Action <> fcAbort) then Ptr := AFilePos;
+        end;
+    end;
+
+  procedure TDosFile.Truncate;
+    var
+      Action : byte;
+    begin
+      inherited Truncate;
+      if (Flags and flError <> flError) then
+        begin
+          repeat
+            System.Truncate(FRec);
+            Action := SetIOResult(System.IOResult);
+          until (Action <> fcRetry);
+          if (Action <> fcAbort) then
+            Flags := Flags or flOpened;
+        end;
+    end;
+
+  function TDosFile.GetName : String;
+    var
+      I : word;
+      S : String;
+    begin
+      S := '';
+      for I := 0 to 79 do
+        if TFileRec(FRec).Name[I] = #0 then
+          Break
+        else
+          S := S + (TFileRec(FRec).Name[I]);
+      GetName := S;
+    end;
+
+end.
+
