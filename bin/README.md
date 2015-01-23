@@ -49,6 +49,8 @@ an error code and along with the type of that error. DOS, BIOS or PASCAL.
 
 **_NULLDISK.EXE_** Utility to wipe boot sector of a floppy.
 
+**_PORTS.EXE_** Simple program to display COM and Printer port assignments.
+
 **_POST.COM_** Simple program to initiate a Power On Self Test. Under DOS, this causes the 
 system to reboot. Warning: If using disk caching software, changes not written to disk
 will be lost.
