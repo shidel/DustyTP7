@@ -29,6 +29,9 @@ Returns type information about the current active drive.
 
 **_ENV.COM_** Returns current environment variable table.
 
+**_ERRORS.EXE_** Simple command line utility to return an error string based on standard
+DOS program error numbers.
+
 **_FASTKEY.COM_** Sets keyboard delay to minimum and and repeat rate to maximum.
 
 **_INFO.EXE_** Returns information about the computer system.
