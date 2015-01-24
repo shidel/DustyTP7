@@ -6,6 +6,8 @@ Copyright 1990-2015 Jerome Shidel.
 
 ### Pre-compiled binary executables.
 
+**_ATOM.EXE_** Simple Non-BGI Direct video graphics mode demo.
+
 **_BOOTDRIV.COM_** Returns the drive letter system used for booting.
 
 _BOOTME.BIN_ Experimental replacement boot sector for floppy disks. 
@@ -61,8 +63,12 @@ will be lost.
 
 _SBPMIXER.DRV_ Binary device driver for controlling a SoundBlaster Pro Mixer chipset.
 
+**_SLIVER.EXE_** Simple Non-BGI Direct video graphics mode demo.
+
 **_TESTANSI.EXE_** Test program for the **_ANSISYS.PAS_** unit. 
 
 **_TESTDOS.EXE_** Test program for **_DOSEXT.PAS_** unit.
+
+**_VIDSPD.EXE_** Simple text mode screen speed test.
 
 **_WRITBOOT.EXE_** Writes a specified file to a floppy boot sector.
