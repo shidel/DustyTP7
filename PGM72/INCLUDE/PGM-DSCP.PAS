@@ -577,10 +577,10 @@ procedure Editexec (Dis : Integer);
          X := MouseX; Y := MouseY;
          If Data = Chr(186) + Chr(24) then Key := Chr(0)+Chr(72);
          If Data = Chr(186) + Chr(25) then Key := Chr(0)+Chr(80);
-         X := X div 8;
-         Y := Y Div 8;
+         { X := X div 8; }
+         { Y := Y Div 8; }
          case X of
-            4..44 : Case Y of
+            4..44: Case Y of
                       4..22 : begin
                                  H := DirPage;
                                  F := DirNum;

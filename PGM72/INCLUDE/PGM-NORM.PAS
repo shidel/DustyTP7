@@ -31,6 +31,7 @@ http://mozilla.org/MPL/2.0/.
             end;
          TotWait := 0;
          SplitButtons (Data, B1, B2, B3);
+         ReleaseButtons;
          If B1 = true then
             ConMouse;
          if Length(data)>2 then
@@ -71,10 +72,12 @@ http://mozilla.org/MPL/2.0/.
                 SearchMode;
              end;
             end; {End of Case Key(1)}
-      if Data = Help   then HelpMode;
+      if Data = Help   then 
+      		HelpMode;
       if (Data = Search) and (SrchStr <> '') then GoFind (SrchStr);
       if Key = Chr(0)+Chr(85) then Searchmode;
-      If Data = Edit   then EditMode;
+      If Data = Edit   then 
+      		EditMode;
       if Data = Enter  then
          If TotDis = 0 then
             Data := ''

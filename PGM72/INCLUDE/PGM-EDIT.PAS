@@ -63,12 +63,12 @@ procedure EditMode;
          X := MouseX;
          Y := MouseY;
          case X of
-            32..424 : Case Y of
-                         32..176 : begin
-                                      if Y div 8 - 4 < TotDis then
+            {32..424} 4..53 : Case Y of
+                         {32..176} 4..22 : begin
+                                      if Y {div 8} - 4 < TotDis then
                                          begin
                                             Holdn := DisNum + DisPag;
-                                            DisNum := y div 8 - 3;
+                                            DisNum := y {div 8} - 3;
                                             ChColor (10);
                                             if B2 then
                                                Tag[DisNum+DisPag] := True;
@@ -79,7 +79,7 @@ procedure EditMode;
                                          end;
                                    end;
                       end;
-           472..624 : begin
+           {472..624} 59..78  : begin
                          PickMenu (X, Y);
                          For I := 1 to MaxList do
                             Tag[I] := False;

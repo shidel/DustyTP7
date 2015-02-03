@@ -114,8 +114,8 @@ Procedure EditMenu;
          Holdn : Integer;
 
       begin
-         X := MouseX div 8;
-         Y := MouseY div 8;
+         X := MouseX {div 8};
+         Y := MouseY {div 8};
 {        GotoXY (1,1);    Write (X:3,Y:3);}
          case Y of
   {F1}      3 : If X In [3..23] then Key := Chr(0) + Chr(59);
@@ -602,6 +602,7 @@ Procedure EditMenu;
             Key := Inkey;
          until (Key <> '') or (Data <> '');
          SplitButtons (Data, B1, B2, B3);
+         ReleaseButtons;
          if B1 then
             ConMo;
          if Key <>'' then
