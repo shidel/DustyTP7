@@ -41,6 +41,9 @@ an error code and along with the type of that error. DOS, BIOS or PASCAL.
 
 **_INFO.EXE_** Returns information about the computer system.
 
+**_INSTALL.EXE_** Very simple installer for PGM 7.2. Basically, creates a directory and
+copies PGM72.EXE there. The creates the launcher batch file for PGM.
+
 **_LARGE.COM_** A **TSR** that installs my larger text mode font.
 
 **_LASTDRIV.COM_** Returns the last assignable dos drive letter. (This used to matter when drive letters used precious memory.)
@@ -50,6 +53,15 @@ an error code and along with the type of that error. DOS, BIOS or PASCAL.
 **_MESSAGE.COM_** Template to display a message. 
 
 **_NULLDISK.EXE_** Utility to wipe boot sector of a floppy.
+
+**_PGM72.EXE_** Multiple menu, text mode program launcher with mouse support for DOS. This version
+of PGM was built for use in pre-Windows environments in early 1992. My PGM series was in active use 
+up to about 1997. Please note, that PGM can do many things more than launch programs. PGM must always be
+started from it's batch file launcher. It is automatically created by the **_INSTALL.EXE_**
+program. Basically, It works like this. _PGM.BAT_ launches _PGM72.EXE_. _PGM72.EXE_ creates
+a batch file called RN.BAT based on the program you want to run and any additional commands 
+assigned to that menu entry. _PGM72.EXE_ quits returning to the _PGM.BAT_ file. _PGM.BAT_ runs 
+_RN.BAT_. Created by _PGM72.EXE_ _RN.BAT_ performs all the tasks and then runs _PGM.BAT_ again.
 
 **_PORTS.EXE_** Simple program to display COM and Printer port assignments.
 
