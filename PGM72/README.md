@@ -11,3 +11,4 @@ Copyright 1990-2015, Jerome Shidel.
 **_INSTALL.PAS_** Very simple installer for PGM 7.2. Basically, creates a directory and
 copies PGM72.EXE there. The creates the launcher batch file. 
 
+![Snapshot 1](../media/PGM72.png "pgm72 snapshot")
