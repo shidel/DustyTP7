@@ -1477,4 +1477,1124 @@ implementation
     end;
 
   const
-    SingleChar     : Char7 = 'Ú¿
+    SingleChar     : Char7 = 'Ú¿ÀÙÄ³';
+    DoubleChar     : Char7 = 'É»È¼Íº';
+    DoubleTopChar  : Char7 = 'Õ¸Ô¾Í³';
+    DoubleSideChar : Char7 = 'Ö·Ó½Äº';
+
+  procedure DrawBox ( X1, Y1, X2, Y2, Style : byte );
+    var
+      BoxChar : Char7;
+      I : byte;
+      O : word;
+      T : byte;
+    begin
+      HideMouse;
+      Dec(X1); Dec(Y1);
+      Dec(X2); Dec(Y2);
+      Case Style of
+        bxDouble     : BoxChar := DoubleChar;
+        bxDoubleTop  : BoxChar := DoubleTopChar;
+        bxDoubleSide : BoxCHar := DoubleSideChar;
+      else
+        BoxChar := SingleChar;
+      end;
+      if (X1 < XYType(WindRange).X) and (Y1 < XYType(WindRange).Y) then
+        begin
+          T := X2;
+          if T > XYType(WindRange).X then T := XYType(WindRange).X;
+          O := ActiveOfs + (Hi(WindMin) + Y1) * ScreenWide +
+               (Lo(WindMin) + X1) Shl 1;
+          Mem[VideoSeg:O + 1] := TextAttr;
+          Mem[VideoSeg:O] := Byte(BoxChar[0]);
+          Inc(O, 2);
+          for I := X1 + 1 to T - 1 do
+            begin
+              Mem[VideoSeg:O + 1] := TextAttr;
+              Mem[VideoSeg:O] := Byte(BoxChar[4]);
+              Inc(O, 2);
+            end;
+          if X2 < XYType(WindRange).X then
+            begin
+              Mem[VideoSeg:O + 1] := TextAttr;
+              Mem[VideoSeg:O] := Byte(BoxChar[1]);
+            end;
+          if Y2 < XYType(WindRange).Y then
+            begin
+              O := ActiveOfs + (Hi(WindMin) + Y2) * ScreenWide +
+               (Lo(WindMin) + X1) Shl 1;
+              Mem[VideoSeg:O + 1] := TextAttr;
+              Mem[VideoSeg:O] := Byte(BoxChar[2]);
+              Inc(O, 2);
+              for I := X1 + 1 to T - 1 do
+                begin
+                  Mem[VideoSeg:O + 1] := TextAttr;
+                  Mem[VideoSeg:O] := Byte(BoxChar[4]);
+                  Inc(O, 2);
+                end;
+              if X2 < XYType(WindRange).X then
+                begin
+                  Mem[VideoSeg:O + 1] := TextAttr;
+                  Mem[VideoSeg:O] := Byte(BoxChar[3]);
+                end;
+            end;
+          T := Y2;
+          if T > XYType(WindRange).Y then T := XYType(WindRange).Y;
+          O := ActiveOfs + (Hi(WindMin) + Y1 + 1) * ScreenWide +
+               (Lo(WindMin) + X1) Shl 1;
+          for I := Y1 + 1 to T - 1 do
+            begin
+              Mem[VideoSeg:O + 1] := TextAttr;
+              Mem[VideoSeg:O] := Byte(BoxChar[5]);
+              Inc(O, ScreenWide);
+            end;
+          if X2 < XYType(WindRange).X then
+            begin
+              O := ActiveOfs + (Hi(WindMin) + Y1 + 1) * ScreenWide +
+                   (Lo(WindMin) + X2) Shl 1;
+              for I := Y1 + 1 to T - 1 do
+                begin
+                  Mem[VideoSeg:O + 1] := TextAttr;
+                  Mem[VideoSeg:O] := Byte(BoxChar[5]);
+                  Inc(O, ScreenWide);
+                end;
+            end;
+        end;
+      ShowMouse;
+    end;
+
+  procedure DrawShadow ( X1, Y1, X2, Y2 : byte );
+    var
+      O : word;
+      T : byte;
+      I : Byte;
+    begin
+      HideMouse;
+      Inc(X1);
+      if (X1 < XYType(WindRange).X) and (Y1 < XYtype(WindRange).Y) then
+        begin
+          if Y2 < XYType(WindRange).Y then
+            begin
+              T := X2;
+              if T >= XYType(WindRange).X then T := XYType(WindRange).X - 1;
+              O := ActiveOfs + (Hi(WindMin) + Y2) * ScreenWide +
+               (Lo(WindMin) + X1) Shl 1 + 1;
+              for I := X1 to T do
+                begin
+                  Mem[VideoSeg:O] := ShadowAttr;
+                  Inc(O, 2);
+                end;
+            end;
+          if X2 < XYType(WindRange).X then
+            begin
+              T := Y2;
+              if T >= XYType(WindRange).Y then T := XYType(WindRange).Y - 1;
+              O := ActiveOfs + (Hi(WindMin) + Y1) * ScreenWide +
+               (Lo(WindMin) + X2) Shl 1 + 1;
+              for I := Y1 to T do
+                begin
+                  Mem[VideoSeg:O]     := ShadowAttr;
+                  Inc(O, ScreenWide);
+                end;
+            end;
+          if X2 + 1 < XYType(WindRange).X then
+            begin
+              O := ActiveOfs + (Hi(WindMin) + Y1) * ScreenWide +
+               (Lo(WindMin) + X2 + 1) Shl 1 + 1;
+              for I := Y1 to T do
+                begin
+                  Mem[VideoSeg:O] := ShadowAttr;
+                  Inc(O, ScreenWide);
+                end;
+            end;
+        end;
+      ShowMouse;
+    end;
+
+ const
+   Current : Str41 = 'ÍÄº³ÉË»ÌÎ¹ÈÊ¼ÖÒ·Ç×¶ÓÐ½ÕÑ¸ÆØµÔÏ¾ÚÂ¿ÃÅ´ÀÁÙ';
+   BarTop1 : Str41 = 'ÑÂ³³ÕÑ¸ÆØµÆØµÚÂ¿ÃÅ´ÃÅ´ÕÑ¸ÆØµÆØµÚÂ¿ÃÅ´ÃÅ´³';
+   BarUp1  : Str41 = 'ØÅ³³ÆØµÆØµÆØµÃÅ´ÃÅ´ÃÅ´ÆØµÆØµÆØµÃÅ´ÃÅ´ÃÅ´³';
+   BarBtm1 : Str41 = 'ÏÁ³³ÆØµÆØµÔÏ¾ÃÅ´ÃÅ´ÀÁÙÆØµÆØµÔÏ¾ÃÅ´ÃÅ´ÀÁÙ³';
+   BarLft1 : Str41 = 'ÄÄÇÃÖÒÒÇ××ÓÐÐÖÒÒÇ××ÓÐÐÚÂÂÃÅÅÀÁÁÚÂÂÃÅÅÀÁÁÄ';
+   BarAcs1 : Str41 = 'ÄÄ×ÅÒÒÒ×××ÐÐÐÒÒÒ×××ÐÐÐÂÂÂÅÅÅÁÁÁÂÂÂÅÅÅÁÁÁÄ';
+   BarRgh1 : Str41 = 'ÄÄ¶´ÒÒ·××¶ÐÐ½ÒÒ·××¶ÐÐ½ÂÂ¿ÅÅ´ÁÁÙÂÂ¿ÅÅ´ÁÁÙÄ';
+   BarTop2 : Str41 = 'ËÒººÉË»ÌÎ¹ÌÎ¹ÖÒ·Ç×¶Ç×¶ÉË»ÌÎ¹ÌÎ¹ÖÒ·Ç×¶Ç×¶º';
+   BarUp2  : Str41 = 'Î×ººÌÎ¹ÌÎ¹ÌÎ¹Ç×¶Ç×¶Ç×¶ÌÎ¹ÌÎ¹ÌÎ¹Ç×¶Ç×¶Ç×¶º';
+   BarBtm2 : Str41 = 'ÊÐººÌÎ¹ÌÎ¹ÈÊ¼Ç×¶Ç×¶ÓÐ½ÌÎ¹ÌÎ¹ÈÊ¼Ç×¶Ç×¶ÓÐ½º';
+   BarLft2 : Str41 = 'ÍÍÌÆÉËËÌÎÎÈÊÊÉËËÌÎÎÈÊÊÕÑÑÆØØÔÏÏÕÑÑÆØØÔÏÏÍ';
+   BarAcs2 : Str41 = 'ÍÍÎØËËËÎÎÎÊÊÊËËËÎÎÎÊÊÊÑÑÑØØØÏÏÏÑÑÑØØØÏÏÏÍ';
+   BarRgh2 : Str41 = 'ÍÍ¹µËË»ÎÎ¹ÊÊ¼ËË»ÎÎ¹ÊÊ¼ÑÑ¸ØØµÏÏ¾ÑÑ¸ØØµÏÏ¾Í';
+
+  procedure DrawLine ( X1, Y1, Len, Style : byte );
+    var
+      SChar, MChar, EChar: ^String;
+      O : word;
+      I, P, T : byte;
+    begin
+      if (X1 > XYType(WindRange).X) or (Y1 > XYType(WindRange).Y) then Exit;
+      Case Style and lnDouble of
+        lnSingle : Case Style and lnVertical of
+          lnVertical : begin
+            MChar := @BarUp1;
+            if Style and lnNoEnds <> lnNoEnds then
+              begin SChar := @BarTop1; EChar := @BarBtm1; end
+            else
+              begin SChar := MChar; EChar := MChar; end;
+          end;
+          lnHorizontal : begin
+            MChar := @BarAcs1;
+            if Style and lnNoEnds <> lnNoEnds then
+              begin SChar := @BarLft1; EChar := @BarRgh1; end
+            else
+              begin SChar := MChar; EChar := MChar; end;
+          end;
+        end;
+        lnDouble : Case Style and lnVertical of
+          lnVertical : begin
+            MChar := @BarUp2;
+            if Style and lnNoEnds <> lnNoEnds then
+              begin SChar := @BarTop2; EChar := @BarBtm2; end
+            else
+              begin SChar := MChar; EChar := MChar; end;
+          end;
+          lnHorizontal : begin
+            MChar := @BarAcs2;
+            if Style and lnNoEnds <> lnNoEnds then
+              begin SChar := @BarLft2; EChar := @BarRgh2; end
+            else
+              begin SChar := MChar; EChar := MChar; end;
+          end;
+        end;
+      end;
+      HideMouse;
+      Dec ( X1 );
+      Dec ( Y1 );
+      O := ActiveOfs + (XYType(WindMin).Y + Y1) * ScreenWide +
+        (XYType(WindMin).X + X1) Shl 1;
+      Case Style and lnVertical of
+        lnVertical : begin
+          T := Len - 1;
+          if Y1 + T >= XYType(WindRange).Y then T := XYType(WindRange).Y - Y1;
+          P := Pos(Char(Mem[VideoSeg:O]), Current);
+          if P = 0 then P := 41;
+          Mem[VideoSeg:O] := Byte(SChar^[P]);
+          Mem[VideoSeg:O + 1] := TextAttr;
+          Inc(O, ScreenWide);
+          For I := 1 to T - 1 do
+            begin
+              P := Pos(Char(Mem[VideoSeg:O]), Current);
+              if P = 0 then P := 41;
+              Mem[VideoSeg:O] := Byte(MChar^[P]);
+              Mem[VideoSeg:O + 1] := TextAttr;
+              Inc(O, ScreenWide);
+            end;
+          if Y1 + Len <= XYType(WindRange).Y then
+            begin
+              P := Pos(Char(Mem[VideoSeg:O]), Current);
+              if P = 0 then P := 41;
+              Mem[VideoSeg:O] := Byte(EChar^[P]);
+              Mem[VideoSeg:O + 1] := TextAttr;
+            end;
+        end;
+        lnHorizontal : begin
+          T := Len - 1;
+          if X1 + T >= XYType(WindRange).X then T := XYType(WindRange).X - X1;
+          P := Pos(Char(Mem[VideoSeg:O]), Current);
+          if P = 0 then P := 41;
+          Mem[VideoSeg:O] := Byte(SChar^[P]);
+          Mem[VideoSeg:O + 1] := TextAttr;
+          Inc(O, 2);
+          For I := 1 to T - 1 do
+            begin
+              P := Pos(Char(Mem[VideoSeg:O]), Current);
+              if P = 0 then P := 41;
+              Mem[VideoSeg:O] := Byte(MChar^[P]);
+              Mem[VideoSeg:O + 1] := TextAttr;
+              Inc(O, 2);
+            end;
+          if X1 + Len <= XYType(WindRange).X then
+            begin
+              P := Pos(Char(Mem[VideoSeg:O]), Current);
+              if P = 0 then P := 41;
+              Mem[VideoSeg:O] := Byte(EChar^[P]);
+              Mem[VideoSeg:O + 1] := TextAttr;
+            end;
+        end;
+      end;
+      ShowMouse;
+    end;
+
+  function RequestPage : byte;
+    var
+      I : byte;
+    begin
+      RequestPage := $FF;
+      For I := 0 to MaxPage do
+        if PageAvail[I] then
+          begin
+            PageAvail[I] := False;
+            RequestPage  := I;
+            Break;
+          end;
+    end;
+
+  procedure ReleasePage ( Page : byte );
+    begin
+      if Page > MaxPage then Exit;
+      PageAvail[Page] := True;
+    end;
+
+  procedure GetPageState ( var PS : PageStateType );
+    begin
+      PS.WhereXY    := WhereXY;
+      PS.WindMin    := WindMin;
+      PS.WindMax    := WindMax;
+      PS.TextAttr   := TextAttr;
+      PS.ShadowAttr := ShadowAttr;
+      PS.BackChar   := BackgroundChar;
+      PS.AutoCursor := AutoCursor;
+      PS.Scrolling  := Scrolling;
+      PS.Cursor     := GetCurrentCursor;
+    end;
+
+  procedure SetPageState ( PS : PageStateType );
+    begin
+      AutoCursor := False;
+      with PS do
+        Window ( Lo(WindMin) + 1, Hi(WindMin) + 1, Lo(WindMax) + 1, Hi(WindMax) + 1);
+      AutoCursor := PS.AutoCursor;
+      GotoXY ( Lo(PS.WhereXY) + 1, Hi(PS.WhereXY) + 1 );
+      TextAttr   := PS.TextAttr;
+      ShadowAttr := PS.ShadowAttr;
+      BackgroundChar := PS.BackChar;
+      Scrolling  := PS.Scrolling;
+      SetCurrentCursor ( PS.Cursor );
+    end;
+{---------------------------------------------------------------------------}
+{ Buttons }
+  constructor OTButton.Init(X, Y : Byte; D, K : String; Com : word; Next : PTButton );
+    var
+      B1, B2, B3 : Boolean;
+      I          : Byte;
+    begin
+      NextButton := Next;
+      for B3 := False to True do
+        for B2 := False to True do
+          for B1 := False to True do
+            Commands[B1, B2, B3] := Com;
+      Commands[False, False, True] := Not Com;
+      WaitTime := -1; { Till Released }
+      KeyValue := K;
+      HPos := 0;
+      HLen := 0;
+      Wide := 0;
+      xPos := X;
+      yPos := Y;
+      Active := True;
+      KSpeed := KeySpeed;
+      Attr   := ButtonAttr;
+      Pressable := True;
+      B1 := False; B2 := False;
+      Data := '';
+      For I := 1 to Length(D) do
+        if D[I] <> '~' then
+          begin
+            Inc ( Wide );
+            Data := Data + D[I];
+            if (HPos <> 0) and B1 then
+              Inc(HLen);
+          end
+        else
+        if (B2 = False) then
+          begin
+            HPos := Wide + 1;
+            HLen := 0;
+            B2 := True;
+            B1 := True;
+          end
+        else
+          B1 := False;
+      WindMn := WindMin + $0101;
+      WindMx := WindMax + $0101;
+    end;
+
+  destructor OTButton.Done;
+    begin
+      if Assigned(NextButton) then Dispose(NextButton, Done);
+    end;
+
+  procedure OTButton.Draw;
+    begin
+      Show ( False );
+      if Assigned(NextButton) then NextButton^.Draw;
+    end;
+
+  procedure OTButton.Show( Press : boolean );
+    var
+      I         : Byte;
+      TAttr     : word;
+      PageState : PageStateType;
+    begin
+      if (Not Pressable) and ( Press ) then Exit;
+      GetPageState ( PageState );
+      AutoCursor := False;
+      Window ( Lo(WindMn), Hi(WindMn), Lo(WindMx), Hi(WindMx) );
+      GotoXY ( xPos, yPos );
+      if Not Active then TAttr := Attr.InActive else
+      if Press then TAttr := Attr.Press else TAttr := Attr.Release;
+      FillChar(WriteBuff, Wide * 2, Lo(TAttr));
+      if HPos <> 0 then
+        For I := HPos to HPos + HLen - 1 do
+          WriteBuff[I, 1] := Char(Hi(TAttr));
+      For I := 1 to Wide do WriteBuff[I, 0] := Data[I];
+      WriteScreen ( WriteBuff, Wide );
+      SetPageState ( PageState );
+    end;
+
+  function OTButton.Check ( Key : Str2 ) : word;
+    var
+      Command : word;
+    begin
+      if Active and (Key = KeyValue) then
+        begin
+          Show  ( True );
+          Check := Commands[True, False, False];
+          WaitDelay;
+          Show  ( False );
+        end
+      else
+      if Active and MouseCheck( Command ) then
+        Check := Command
+      else
+      if Assigned(NextButton) then
+        Check := NextButton^.Check( Key )
+      else
+        Check := cmNoCommand;
+    end;
+
+  procedure OTButton.WaitDelay;
+    begin
+      Delay ( KSpeed );
+    end;
+
+  function OTButton.MouseCheck(var Com : Word) : boolean;
+    var
+      X, Y, B : integer;
+      On, B1, B2, B3 : Boolean;
+      LI, I          : word;
+      WaitCount      : integer;
+    begin
+      MouseCheck := False;
+      if not TMouse^.Exist then Exit;
+      TMouse^.GetPosition ( X, Y, B );
+      X := X - Lo(WindMn) + 2;
+      Y := Y - Hi(WindMn) + 2;
+      if (B = 0) or (X < xPos) or (X > xPos + Wide - 1) or (Y <> yPos) then
+        Exit;
+      B1 := False;
+      B2 := False;
+      B3 := False;
+      Show ( True );
+      WaitCount := WaitTime;
+      LI := TimerTicks;
+      I  := Not LI;
+      repeat
+        UnitIdle;
+        if B and LeftButton   = LeftButton   then B1 := True;
+        if B and CenterButton = CenterButton then B2 := True;
+        if B and RightButton  = RightButton  then B3 := True;
+        TMouse^.GetPosition ( X, Y, B );
+        X := X - Lo(WindMn) + 2;
+        Y := Y - Hi(WindMn) + 2;
+        On := (X >= xPos) and (X < xPos + Wide) and (Y = yPos);
+        if (WaitCount <> -1) then
+          begin
+            if WaitCount = 0 then B := 0;
+            LI := TimerTicks;
+            if I <> LI then
+              begin
+                I := LI;
+                Dec ( WaitCount );
+              end;
+          end;
+      until (B = 0) or (Not On);
+      Show ( False );
+      Com := Commands[B1, B2, B3];
+      MouseCheck := On;
+    end;
+
+  function OTButton.SetState ( Com : word; Act : boolean ) : boolean;
+    begin
+      if Com = Commands[False, False, False] then
+        begin
+          SetState := True;
+          Active := Act;
+        end
+      else
+      if Assigned(NextButton) then
+        SetState := NextButton^.SetState( Com, Act )
+      else
+        SetState := False;
+    end;
+
+  function OTButton.SetCommand ( Com, NCom : word; Buttons : byte ) : boolean;
+    begin
+      if Com = Commands[False, False, False] then
+        begin
+          SetCommand := True;
+          Commands[Buttons and LeftButton = LeftButton,
+                   Buttons and CenterButton = CenterButton,
+                   Buttons and RightButton = RightButton] := NCom;
+        end
+      else
+      if Assigned(NextButton) then
+        SetCommand := NextButton^.SetCommand( Com, NCom, Buttons )
+      else
+        SetCommand := False;
+    end;
+
+  function OTButton.Occupied ( X, Y : byte ) : word;
+    begin
+      if (X >= xPos) and (X < xPos + Wide) and (Y = yPos) then
+        Occupied := Commands[False, False, False]
+      else
+      if Assigned(NextButton) then
+        Occupied := NextButton^.Occupied(X, Y)
+      else
+        Occupied := cmNoCommand;
+    end;
+
+  function OTButton.WhereX ( Com : word ) : byte;
+    begin
+      if Com = Commands[False, False, False] then
+        WhereX := xPos
+      else
+      if Assigned(NextButton) then
+        WhereX := NextButton^.WhereX(Com)
+      else
+        WhereX := 0;
+    end;
+
+  function OTButton.WhereY ( Com : word ) : byte;
+    begin
+      if Com = Commands[False, False, False] then
+        WhereY := yPos
+      else
+      if Assigned(NextButton) then
+        WhereY := NextButton^.WhereY(Com)
+      else
+        WhereY := 0;
+    end;
+
+  procedure OTButton.SetXY ( Com : word; X, Y : Byte );
+    begin
+      if Com = Commands[False, False, False] then
+        begin
+          xPos := X;
+          yPos := Y;
+        end
+      else
+      if Assigned(NextButton) then
+        NextButton^.SetXY ( Com, X, Y )
+    end;
+
+  procedure OTButton.SetWait ( Com : word; Time : integer );
+    begin
+      if Com = Commands[False, False, False] then
+        WaitTime := Time
+      else
+      if Assigned(NextButton) then
+        NextButton^.SetWait ( Com, Time )
+    end;
+
+  procedure OTButton.SetPressable ( Com : word; P : Boolean );
+    begin
+      if Com = Commands[False, False, False] then
+        Pressable := P
+      else
+      if Assigned(NextButton) then
+        NextButton^.SetPressable ( Com, P )
+    end;
+
+  function NewButton ( X, Y : byte; D, K : String; Command : word; Next : PTButton ) : PTButton;
+    begin
+      if MaxAvail > Sizeof(OTButton) + 1024 then
+        NewButton := New(PTButton, Init(X, Y, D, K, Command, Next))
+      else
+        begin
+          NewButton := Next;
+          ButtonError := 8;
+        end;
+    end;
+{----------------------------------------------------------------------------}
+{ ScrollBars }
+  constructor OVScroll.Init ( X, Y, L : byte; R, P : Word; DKey, IKey : Str2 );
+    var
+      KSpeed : Word;
+      Attr   : ButtonAttrType;
+    begin
+      KSpeed := KeySpeed;
+      KeySpeed := 0;
+      Windmn := WIndMin + $0101;
+      WindMx := WindMax + $0101;
+      Range := R; Pos   := P; xPos  := X;  yPos  := Y;
+      BAtr  := ScrollAttr.Bar;
+      BChr  := VScrollChar[3];
+      Len   := L;
+      if Range > 0 then Scale := (Len - 2) / Range else Scale := 1;
+      Attr   := ButtonAttr;
+      with ButtonAttr do
+        begin
+          Press  := ScrollAttr.Arrows shl 8 + ScrollAttr.Arrows;
+          Release := Press;
+          InActive := Press;
+        end;
+      Buts   := NewButton( X, Y + L, VScrollChar[1], IKey, cmScrollBarDown, nil);
+      with ButtonAttr do
+        begin
+          Press  := ScrollAttr.Marker shl 8 + ScrollAttr.Marker;
+          Release := Press;
+          InActive := Press;
+        end;
+      Marker := NewButton( X, Y + 1 + Round(Pos * Scale),
+                           VScrollChar[2], #$FF#$FF, cmMarker, nil);
+      with ButtonAttr do
+        begin
+          Press  := ScrollAttr.Arrows shl 8 + ScrollAttr.Arrows;
+          Release := Press;
+          InActive := Press;
+        end;
+      Buts   := NewButton( X, Y, VScrollChar[0], DKey, cmScrollBarUp, Buts);
+      if Assigned(Buts) then
+        begin
+          Buts^.SetWait   ( cmScrollBarUp, ScrollSpeed );
+          Buts^.SetWait   ( cmScrollBarDown, ScrollSpeed );
+          Marker^.SetWait ( cmMarker, ScrollSpeed );
+          Buts^.SetPressable  ( cmScrollBarUp, False );
+          Buts^.SetPressable  ( cmScrollBarDown, False );
+          Marker^.SetPressable ( cmMarker, False );
+        end;
+      ButtonAttr := Attr;
+      KeySpeed := KSpeed;
+    end;
+
+  destructor OVScroll.Done;
+    begin
+      if Assigned(Buts)   then Dispose(Buts,   Done);
+      if Assigned(Marker) then Dispose(Marker, Done);
+    end;
+
+  procedure OVScroll.Draw;
+    var
+      I : Byte;
+      PageState : PageStateType;
+    begin
+      GetPageState ( PageState );
+      AutoCursor := False;
+      Window ( Lo(WindMn), Hi(WindMn), Lo(WindMx), Hi(WindMx) );
+      TextAttr := BAtr;
+      for I := yPos + 1 to yPos + Len do
+        begin
+          GotoXY ( xPos, I );
+          Write  ( BChr );
+        end;
+      if Assigned ( Buts ) then Buts^.Draw;
+      if Assigned ( Marker ) then Marker^.Draw;
+      SetPageState ( PageState );
+    end;
+
+  procedure OVScroll.Refresh;
+    var
+      TY, WY : word;
+      PageState : PageStateType;
+    begin
+      if Assigned(Marker) then
+        begin
+          TY := yPos + 1 + Round(Pos * Scale);
+          WY := Marker^.WhereY ( cmMarker );
+          if WY <> TY then
+            begin
+              GetPageState ( PageState );
+              AutoCursor := False;
+              Window ( Lo(WindMn), Hi(WindMn), Lo(WindMx) , Hi(WindMx) );
+              TextAttr := BAtr;
+              GotoXY ( xPos, WY );
+              Write  ( bChr );
+              Marker^.SetXY ( cmMarker, xPos, TY );
+              Marker^.Show( False );
+              SetPageState ( PageState );
+            end;
+        end;
+    end;
+
+  function OVScroll.GetPosition ( Key : Str2 ) : word;
+    var
+      Command : Word;
+      X, Y, B : integer;
+    begin
+      if Assigned( Buts ) then
+        begin
+          Command := Buts^.Check( Key );
+          if TVideoHandler ( Command ) and (Command <> cmNoCommand) then
+            begin
+              GetPosition := Pos;
+              Exit;
+            end;
+          Case Command of
+            cmScrollBarDown : if Pos < Range then begin
+              Inc (Pos);
+              Refresh;
+            end;
+            cmScrollBarUp : if Pos > 0 then begin
+              Dec (Pos);
+              Refresh;
+            end;
+          else
+            if (Range <> 0) and TMouse^.GetPosition ( X, Y, B ) then
+              begin
+                X := (X + 2) - Lo(WindMn);
+                Y := (Y + 2) - Hi(WindMn);
+                if (B <> 0) and (X = xPos) and (Y > yPos) and (Y < YPos + Len) then
+                  begin
+                    Pos := Round((Y - YPos - 1) / Scale);
+                    Refresh;
+                  end;
+              end;
+          end;
+        end;
+      GetPosition := Pos;
+    end;
+
+  procedure OVScroll.SetPosition ( P : word );
+    begin
+      if (P <> Pos) then
+        begin
+          Pos := P;
+          if Pos > Range then Pos := Range;
+          Refresh;
+        end;
+    end;
+
+  procedure OVScroll.SetRange    ( R : word );
+    begin
+      if R <> Range then
+        begin
+          if Pos > Range then Pos := Range;
+          Range := R;
+          if Range > 0 then Scale := (Len - 2) / Range else Scale := 1;
+          Refresh;
+        end;
+    end;
+
+  function OVScroll.GetRange : word;
+    begin
+      GetRange := Range;
+    end;
+
+  procedure OVScroll.SetLength ( L : Word );
+    begin
+      Len   := L;
+      if Range > 0 then Scale := (Len - 2) / Range else Scale := 1;
+      if Assigned ( Buts ) then
+        begin
+          Buts^.SetXY ( cmScrollBarDown, xPos, yPos + Len);
+          Refresh;
+        end;
+    end;
+{----------------------------------------------------------------------------}
+
+  constructor OHScroll.Init ( X, Y, L : byte; R, P : Word; DKey, IKey : Str2 );
+    var
+      KSpeed : Word;
+      Attr   : ButtonAttrType;
+    begin
+      KSpeed := KeySpeed;
+      KeySpeed := 0;
+      WindMn := WindMin + $0101;
+      WindMx := WindMax + $0101;
+      Range := R; Pos   := P; xPos  := X;  yPos  := Y;
+      BAtr  := ScrollAttr.Bar;
+      BChr  := VScrollChar[3];
+      Len   := L;
+      if Range > 0 then Scale := (Len - 2) / Range else Scale := 1;
+      Attr := ButtonAttr;
+      with ButtonAttr do
+        begin
+          Press  := ScrollAttr.Arrows shl 8 + ScrollAttr.Arrows;
+          Release := Press;
+          InActive := Press;
+        end;
+      Buts   := NewButton( X + L, Y, HScrollChar[1], IKey, cmScrollBarRight, nil);
+      with ButtonAttr do
+        begin
+          Press  := ScrollAttr.Marker shl 8 + ScrollAttr.Marker;
+          Release := Press;
+          InActive := Press;
+        end;
+      Marker := NewButton( X + 1 + Round(Pos * Scale), Y,
+                           HScrollChar[2], #$FF#$FF, cmMarker, nil);
+      with ButtonAttr do
+        begin
+          Press  := ScrollAttr.Arrows shl 8 + ScrollAttr.Arrows;
+          Release := Press;
+          InActive := Press;
+        end;
+      Buts   := NewButton( X, Y, HScrollChar[0], DKey, cmScrollBarLeft, Buts);
+      if Assigned(Buts) then
+        begin
+          Buts^.SetWait ( cmScrollBarLeft, ScrollSpeed );
+          Buts^.SetWait ( cmScrollBarRight, ScrollSpeed );
+          Marker^.SetWait ( cmMarker, ScrollSpeed );
+          Buts^.SetPressable  ( cmScrollBarLeft, False );
+          Buts^.SetPressable  ( cmScrollBarRight, False );
+          Marker^.SetPressable ( cmMarker, False );
+        end;
+      ButtonAttr := Attr;
+      KeySpeed := KSpeed;
+    end;
+
+  destructor OHScroll.Done;
+    begin
+      if Assigned(Buts)   then Dispose(Buts,   Done);
+      if Assigned(Marker) then Dispose(Marker, Done);
+    end;
+
+  procedure OHScroll.Draw;
+    var
+      I : Byte;
+      PageState : PageStateType;
+    begin
+      GetPageState ( PageState );
+      AutoCursor := False;
+      Window ( Lo(WindMn), Hi(WindMn), Lo(WindMx) , Hi(WindMx) );
+      TextAttr := BAtr;
+      for I := xPos + 1 to xPos + Len do
+        begin
+          GotoXY ( I, yPos );
+          Write  ( BChr );
+        end;
+      if Assigned ( Buts ) then Buts^.Draw;
+      if Assigned ( Marker ) then Marker^.Draw;
+      SetPageState ( PageState );
+    end;
+
+  procedure OHScroll.Refresh;
+    var
+      TX, WX : word;
+      PageState : PageStateType;
+    begin
+      if Assigned(Marker) then
+        begin
+          TX := xPos + 1 + Round(Pos * Scale);
+          WX := Marker^.WhereX ( cmMarker );
+          if WX <> TX then
+            begin
+              GetPageState ( PageState );
+              AutoCursor := False;
+              Window ( Lo(WindMn), Hi(WindMn), Lo(WindMx) , Hi(WindMx) );
+              TextAttr := BAtr;
+              GotoXY ( WX, yPos );
+              Write  ( bChr );
+              Marker^.SetXY ( cmMarker, TX, yPos );
+              Marker^.Show( False );
+              SetPageState ( PageState );
+            end;
+        end;
+    end;
+
+  function OHScroll.GetPosition ( Key : Str2 ) : word;
+    var
+      Command : Word;
+      X, Y, B : integer;
+    begin
+      if Assigned( Buts ) then
+        begin
+          Command := Buts^.Check( Key );
+          if TVideoHandler ( Command ) and (Command <> cmNoCommand) then
+            begin
+              GetPosition := Pos;
+              Exit;
+            end;
+          Case Command of
+            cmScrollBarRight : if Pos < Range then begin
+              Inc (Pos);
+              Refresh;
+            end;
+            cmScrollBarLeft : if Pos > 0 then begin
+              Dec (Pos);
+              Refresh;
+            end;
+          else
+            if (Range <> 0) and TMouse^.GetPosition ( X, Y, B ) then
+              begin
+                X := (X + 2) - Lo(WindMn);
+                Y := (Y + 2) - Hi(WindMn);
+                if (B <> 0) and (Y = YPos) and (X > XPos) and (X < XPos + Len) then
+                  begin
+                    Pos := Round((X - XPos - 1) / Scale);
+                    Refresh;
+                  end;
+              end;
+          end;
+        end;
+      GetPosition := Pos;
+    end;
+
+  procedure OHScroll.SetPosition ( P : word );
+    begin
+      if (P <> Pos) then
+        begin
+          Pos := P;
+          if Pos > Range then Pos := Range;
+          Refresh;
+        end;
+    end;
+
+  procedure OHScroll.SetRange    ( R : word );
+    begin
+      if R <> Range then
+        begin
+          if Pos > Range then Pos := Range;
+          Range := R;
+          if Range > 0 then Scale := (Len - 2) / Range else Scale := 1;
+          Refresh;
+        end;
+    end;
+
+  function OHScroll.GetRange : word;
+    begin
+      GetRange := Range;
+    end;
+
+  procedure OHScroll.SetLength ( L : Word );
+    begin
+      Len   := L;
+      if Range > 0 then Scale := (Len - 2) / Range else Scale := 1;
+      if Assigned ( Buts ) then
+        begin
+          Buts^.SetXY ( cmScrollBarRight, xPos + Len, yPos);
+          Refresh;
+        end;
+    end;
+
+  function NewVScroll ( X, Y, L : byte; R, P : word; DKey, IKey : Str2 ) : PVScroll;
+    begin
+      if MaxAvail > Sizeof(OVScroll) + 1024 then
+        NewVScroll := New(PVScroll, Init(X, Y, L, R, P, DKey, IKey))
+      else
+        begin
+          NewVScroll := Nil;
+          ButtonError := 8;
+        end;
+    end;
+
+  function NewHScroll ( X, Y, L : byte; R, P : word; DKey, IKey : Str2 ) : PHScroll;
+    begin
+      if MaxAvail > Sizeof(OHScroll) + 1024 then
+        NewHScroll := New(PHScroll, Init(X, Y, L, R, P, DKey, IKey))
+      else
+        begin
+          NewHScroll := Nil;
+          ButtonError := 8;
+        end;
+    end;
+{---------------------------------------------------------------------------}
+{Internal Speaker Sound }
+  procedure Speaker ( On : boolean ); assembler;
+    asm
+      MOV  DX, 061h
+      IN   AL, DX
+      AND  AL, 11111100b
+      MOV  BL, On
+      SHL  BL, 1
+      OR   AL, BL
+      OUT  DX, AL
+    end;
+
+  procedure NoSound; assembler;
+    asm
+      MOV  DX, 061h
+      IN   AL, DX
+      AND  AL, 11111101b
+      OR   AL, 00000001b
+      OUT  DX, AL
+      MOV  AL, 10110110b
+      MOV  DX, 043h
+      OUT  DX, AL
+      MOV  DX, 042h
+      MOV  AL, 0
+      OUT  DX, AL
+      OUT  DX, AL
+    end;
+
+  procedure TimerSound ( Val : word ); assembler;
+    asm
+      MOV  AL, 10110110b
+      MOV  DX, 043h
+      OUT  DX, AL
+      MOV  DX, 042h
+      Mov  AX, Val
+      OUT  DX, AL
+      MOV  AL, AH
+      OUT  DX, AL
+      MOV  DX, 061h
+      IN   AL, DX
+      AND  AL, 11111111b
+      OR   AL, 00000011b
+      OUT  DX, AL
+    end;
+
+  procedure RealSound ( Freq : Real );
+    begin
+      if Freq > 0 then
+        TimerSound ( Trunc(1193180 / Freq));
+    end;
+
+  procedure Sound ( Freq : Word );
+    begin
+      if Freq > 0 then
+        TimerSound ( 1193180 div Freq );
+    end;
+
+  procedure Delay ( Ticks : Byte );
+    begin
+      DelayCount := Ticks;
+      repeat
+        UnitIdle;
+      until DelayCount = 0;
+    end;
+
+  procedure Beep;
+    begin
+      TimerSound ( 1028 );
+      Delay ( 9 );
+      NoSound;
+    end;
+
+  function  WindowSize : word;
+    begin
+      WindowSize := ((Lo(WindMax) - Lo(WindMin) + 1) * 2) *
+                  (Hi(WindMax) - Hi(WindMin) + 1) + Sizeof(Word) * 2;
+    end;
+
+  procedure GetWindow ( var Adr ); assembler;
+    asm
+      CALL HideMouse
+      PUSH DS
+      PUSH ES
+      PUSH DI
+      PUSH SI
+
+      LES  SI, Adr
+      MOV  AX, WindMin
+      MOV  ES:[SI], AX
+      ADD  SI, 2
+      MOV  AX, WindMax
+      MOV  ES:[SI], AX
+      ADD  SI, 2
+
+      MOV  DI, ActiveOfs
+      MOV  AX, ScreenWide
+      MOV  BX, AX
+      MOV  CX, WindMin
+      MUL  CH
+      MOV  CH, 0
+      SHL  CX, 1
+      ADD  AX, CX
+      ADD  DI, AX
+      MOV  CX, WindRange
+      MOV  DH, 0
+      MOV  DL, CH
+      MOV  CH, 0
+      MOV  DS, VideoSeg
+    @@1:
+      PUSH DI
+      PUSH CX
+    @@2:
+      MOV  AX, [DI]
+      MOV  ES:[SI], AX
+      ADD  DI, 2
+      ADD  SI, 2
+      LOOP @@2
+      POP  CX
+      POP  DI
+      ADD  DI, BX
+      DEC  DX
+      CMP  DX, $00
+      JNE  @@1
+      POP  SI
+      POP  DI
+      POP  ES
+      POP  DS
+      CALL ShowMouse
+    end;
+
+  procedure PutWindow ( var Adr ); assembler;
+    asm
+      CALL HideMouse
+      PUSH DS
+      PUSH ES
+      PUSH DI
+      PUSH SI
+
+      LES  SI, Adr
+      MOV  AX, ES:[SI]
+      MOV  WindMin, AX
+      ADD  SI, 2
+      MOV  AX, ES:[SI]
+      MOV  WindMax, AX
+      ADD  SI, 2
+
+      ADD  AX, $0101
+      SUB  AX, WindMin
+      MOV  WindRange, AX
+
+      MOV  DI, ActiveOfs
+      MOV  AX, ScreenWide
+      MOV  BX, AX
+      MOV  CX, WindMin
+      MUL  CH
+      MOV  CH, 0
+      SHL  CX, 1
+      ADD  AX, CX
+      ADD  DI, AX
+      MOV  CX, WindRange
+      MOV  DH, 0
+      MOV  DL, CH
+      MOV  CH, 0
+      MOV  DS, VideoSeg
+    @@1:
+      PUSH DI
+      PUSH CX
+    @@2:
+      MOV  AX, ES:[SI]
+      MOV  [DI], AX
+      ADD  DI, 2
+      ADD  SI, 2
+      LOOP @@2
+      POP  CX
+      POP  DI
+      ADD  DI, BX
+      DEC  DX
+      CMP  DX, $00
+      JNE  @@1
+      POP  SI
+      POP  DI
+      POP  ES
+      POP  DS
+      CALL ShowMouse
+    end;
+
+  function GetBlink : boolean;
+    var
+      TByte : ^Byte;
+    begin
+      TByte := Ptr ( Seg0040, $0065);
+      GetBlink := TByte^ and $20 = $20;
+    end;
+
+
+begin
+  UnitInit;
+end.

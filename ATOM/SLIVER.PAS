@@ -13,7 +13,7 @@ http://mozilla.org/MPL/2.0/.
 {$M 2048,0,655360}
 program Video;
 
-  uses Crt, Keyboard;
+  uses QCrtNM, Keyboard;
 
   const
     Speed     = 1;
@@ -209,7 +209,7 @@ program Video;
         Draw;
         While Ticks - Last < Speed do;
         Last := Ticks;
-      until Key^.Inkey = #27;
+      until (Key^.Inkey = #27) or Keypressed;
       DonePixel;
     end;
 

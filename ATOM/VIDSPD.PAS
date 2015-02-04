@@ -12,7 +12,7 @@ http://mozilla.org/MPL/2.0/.
 {$M 16384,0,655360}
 program Video;
 
-  uses TVideo, Crt, Keyboard, StrAsm;
+  uses TVideo, QCrtNM, Keyboard, StrAsm;
 
   type
 {    ScreenArray = array[0..199, 0..319] of byte;}
@@ -122,7 +122,8 @@ begin
       Bar ( 0, 0, 319, 199 );
     end;
   ShowElapsed(GetElapsed);
-  Key^.Pause;
+      repeat
+      until (Key^.Inkey = #27) or Keypressed;
   CloseVideo;
   Dispose ( Key, Done );
 end.
