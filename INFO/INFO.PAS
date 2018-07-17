@@ -1,8 +1,8 @@
-{ 
-Copyright 1990-2015, Jerome Shidel.
-	
-This project and related files are subject to the terms of the Mozilla Public License, 
-v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at 
+{
+Copyright 1990-2018, Jerome Shidel.
+
+This project and related files are subject to the terms of the Mozilla Public License,
+v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at
 http://mozilla.org/MPL/2.0/.
 }
 
@@ -80,8 +80,24 @@ program Information;
       MOV AX, $1200
       MOV BL, $10
       INT $10
+
+      { Thanks to several developers in the FreeDOS-devel mailing list. I'm
+      back into some decades old code to fix a probable bug. Either, I goofed
+      when I originally wrote this, the original reference material was wrong
+      or this original test is not the most reliable.
+
       CMP BH, $10
       JNE @@TestCGA
+
+      Based on excerpt from Mateusz regarding a PC MAGAZINE article issued
+      Sep 26, 1989 by Jeff Prosise. Page 383. The test should assume EGA is
+      not present if BL is still 0x10h.
+
+      }
+
+      CMP BL, $10
+      JE  @@TestCGA
+
       MOV AX, EGA
       JMP @@Done
     @@TestCGA:
