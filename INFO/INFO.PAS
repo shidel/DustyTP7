@@ -56,7 +56,7 @@ program Information;
       MOV  AH, $4f
       XOR  AL, AL
       INT  $10
-      CMP  AX, $014F
+      CMP  AX, $004F
       JNE  @@TestVGA
       MOV  AX, Vesa
       JMP  @@Done
@@ -328,6 +328,7 @@ program Information;
         EGA     : Write('EGA');
         MCGA    : Write('MCGA');
         VGA     : Write('VGA');
+        VESA	: Write('SuperVGA');
       else
         Write('unknown');
       end;
